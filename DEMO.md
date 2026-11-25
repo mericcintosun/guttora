@@ -10,6 +10,8 @@
 
 Demo start route: /
 
+Before each take: open `/play?reset=1`.
+
 ## Steps
 
 1. `/` (`app/page.tsx`, `components/drip-story.tsx`): read the five chapters following seed tap C-214 as the pinned scene plays.

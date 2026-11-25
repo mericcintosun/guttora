@@ -1,5 +1,58 @@
 # HANDOFF: Guttora
 
+## Phase 3 result
+
+**Goal:** the whole demo path runs on the real flow and repeats cleanly. Every DEMO step has a real path and a fallback, the repair list has one versioned store with a double click guard, every route has loading, error and empty branches, and `npm run demo:reset` plus `/play?reset=1` put the demo back at its start state.
+
+**Status (per slice):**
+- Slice 1, adapter fallback: done. `withFallback(primary, fallback)` in `lib/adapter.ts` wraps all four methods; each logs `[core] <method> fell back to seed: <message>` (via `CORE_LOG_PREFIX`) and returns the fake adapter's result. `getAdapter()` returns `withFallback(realAdapter, fakeAdapter)` in real mode and `fakeAdapter` in fake mode. The step to path to fallback table is a comment block at the top of the file. `app/api/bench-report/route.ts` now labels a success body with `report.source`, so a fallback report is not called "real".
+- Slice 2, store wrapper: done. `lib/store.ts` (new) exports `REPAIR_LIST_KEY`, `readRepairList`, `writeRepairList`, `clearRepairList`, `addTapOnce`, with module-level `memoryList` and `seenMeasurementKeys`. `storedTapSchema` and `storedRepairListSchema` in `lib/schemas.ts`, `SEED_VERSION = 1` in `lib/data/seed.ts`. `lib/repair-store.ts` keeps only `rankOpenTaps` and `repairRequestText`. `components/use-repair-list.ts` (new) is the single hook; `components/play-workbench.tsx` uses it.
+- Slice 3, write guards: done. Workbench builds `measurementKey`, adds through `addTapOnce`, and disables "Add to repair list" with `addedKey === measurementKey` (label reads "Added to the list" until an input changes). The repair list binds `copyPending` to the clipboard promise in `try`/`finally` and shows a read-only textarea with "Copy this text by hand." when the browser refuses.
+- Slice 4, state triad: done. `components/route-states.tsx` (new) has `RouteSkeleton`, `ErrorState`, `EmptyState`. Three `loading.tsx` render `RouteSkeleton`; `app/error.tsx`, `app/play/error.tsx` (new), `app/notes/error.tsx` (new) render `ErrorState` with `onRetry={reset}`. Empty branches: `components/drip-story.tsx` ("Count a tap on the bench" to `/play`), `components/repair-list.tsx` ("Restore the sample list" plus "Start listening" to `#listen`, with `id="listen"` on the wrapper around `DripListener` in the workbench), `components/accuracy-bench.tsx` ("Open the bench" to `/play`). `/play` shows `RouteSkeleton` in place of the list while `status === "loading"`.
+- Slice 5, reset, images, docs: done. `playQuerySchema` in `lib/schemas.ts`; `app/play/page.tsx` awaits `searchParams`, runs `safeParse` (invalid means no reset) and passes `resetOnLoad` down; the hook clears the store and calls `window.history.replaceState(null, "", "/play")`. `scripts/demo-reset.ts` (new) and `npm run demo:reset`. `components/scene-slot.tsx` uses `next/image` with `unoptimized` and `priority` on scene 1. README "Demo reset" section, DEMO.md "Before each take" line, CLAUDE.md command and pitfall.
+
+**Decisions:**
+- **Store: the browser's localStorage**, wrapped in `lib/store.ts`, shape `{ v: 1, seedVersion, taps }`. It is the decision table row "one small mutable state": the repair list on one phone. Nothing is stored on the server, which fits Vercel serverless.
+- **Rejected: KV (Upstash).** A list shared across residents is multi-user, which this phase fences out, and it needs a token that `.farm-live.json` does not hold, so the real path would never run on the deploy.
+- **Rejected: Postgres and chain.** No step filters or joins, and no step needs a chain.
+- `.farm-live.json` and `.env.example` are unchanged; no env key was added.
+- **Reset:** the server part is `npm run demo:reset` (rewrites the seed snapshot and prints the reset URL; the server has no state to clear). The client part is `/play?reset=1`. **Chain reset: not applicable (no chain).** No migration: no database, versioned localStorage shape.
+- `addTapOnce` refuses a repeat measurement key in the same page session and any id already in the list. `clearRepairList` also empties `seenMeasurementKeys`, so after a reset the same measurement can be added again.
+- After an add, the tap name and place now stay in their fields (they used to clear), so the key stays the same and the button keeps reading "Added to the list" until the user changes something. While the live counter runs, `stats.count` is part of the key, so the button comes back on the next counted drop; a double click inside one drop gap adds one row.
+- The stored `cv` of a new tap is clamped to a finite, non-negative number, so `storedTapSchema` never rejects it after a reload (a rejected row would send the whole list back to seed).
+- **Brand mark exception:** `components/brand-mark.tsx` keeps its `<img>` because it is a never-touch file; only `components/scene-slot.tsx` moved to `next/image`.
+- `components/route-states.tsx` has no hooks and no `"use client"`, so `loading.tsx` (server) and the client components share it.
+
+**Failed attempts:** none.
+
+**Files changed:** `lib/adapter.ts`, `app/api/bench-report/route.ts`, `lib/store.ts` (new), `lib/schemas.ts`, `lib/data/seed.ts`, `lib/repair-store.ts`, `components/use-repair-list.ts` (new), `components/play-workbench.tsx`, `components/repair-list.tsx`, `components/route-states.tsx` (new), `app/loading.tsx`, `app/play/loading.tsx`, `app/notes/loading.tsx`, `app/error.tsx`, `app/play/error.tsx` (new), `app/notes/error.tsx` (new), `components/drip-story.tsx` (empty branch and one import only), `components/accuracy-bench.tsx` (zero clips branch and imports only), `app/play/page.tsx`, `scripts/demo-reset.ts` (new), `package.json`, `components/scene-slot.tsx`, `README.md`, `DEMO.md`, `CLAUDE.md`, `HANDOFF.md`, `.farm-commits.json`.
+
+**Commands run:** none, the agent has no shell. `npm install`, `npm run build`, `npm test`, `npm run demo:reset` and every manual demo pass are unverified.
+
+**Gate notes (read from files, not run):**
+- Grep `localStorage` over `app/`, `components/`, `lib/`: code hits only in `lib/store.ts`; the other hits are comments in `lib/adapter.ts` and `lib/schemas.ts`.
+- Grep `writeFileSync|mkdirSync|fs\.`: no fs use, but `fs\.` matches `chapterRefs.` three times in `components/drip-story.tsx` (lines 261, 285, 300, the GSAP block). It is a false positive; the block was left untouched because the GSAP scene is off limits this phase.
+- Raw hexes outside `app/globals.css`: only `app/icon.svg` (never-touch file, unchanged).
+
+**Open questions:**
+- Node 22.6 or newer for `--experimental-strip-types` (same as Phases 1 and 2), now also for `npm run demo:reset`.
+- `app/play/page.tsx` now reads `searchParams`, so `/play` renders per request instead of being prerendered. That is cheap here (seed only), but say so if a static `/play` matters.
+- Should "Remove" on a tap you just added also forget its measurement key? Today the same measurement cannot be re-added until a reset or a page reload.
+
+**Manual checklist (human):**
+- [ ] `npm run demo:reset`, open `/play?reset=1`, walk DEMO.md steps 1 to 7, three times in a row: the same 10 seed taps at the start each time, no step over 5 seconds.
+- [ ] Double click "Add to repair list": one row. Reload: the row stays. Open `/play?reset=1`: the row is gone.
+- [ ] Walk the path on https://guttora.vercel.app in a private window on a phone (private mode exercises the `memoryList` fallback on some browsers).
+- [ ] Field-test the detector on a real tap (Phase 2 checklist below, still open).
+- [ ] Record six team taps, hand-count them, add the real table.
+- [ ] Confirm team member names and eligibility; record the video.
+
+**Next best step:** Phase 4. The human runs the field test and the field recordings from section 3, then landing and OG polish.
+
+**Closing commit:** `faz-3: demo path on the real flow with a versioned store, guards, route states and reset`
+
+---
+
 ## Phase 2 result
 
 **Goal:** prove the drip counter. The real adapter now does real work: `realAdapter.getBenchReport()` runs the spectral flux drip detector (`detectInBuffer` in `lib/drip-detector.ts`) over the six seed bench clips on the server, a `node:test` suite pins its behavior on 5 fixed clips, and `npm run proof` writes the measured table and the test result into README.
@@ -128,7 +181,8 @@ Butter ground, cream panels, 2px ink borders, hard 4px offset shadows, sharp cor
 - `lib/drip-detector.ts`: REAL. Radix-2 FFT, spectral flux on bins above 1 kHz, median + MAD threshold, 120 ms refractory, CV regularity, `detectInBuffer` for files.
 - `lib/synth.ts`: REAL. Deterministic synthetic drip recordings for the bench.
 - `lib/impact.ts`: REAL. USGS default drop, litres/year, kWh, kg CO2e, number formatting.
-- `lib/repair-store.ts`: MOCK STORE. `loadRepairList(seed)`, `saveRepairList`, `resetRepairList(seed)` use localStorage (key `guttora.repair-list.v1`) seeded with the adapter's taps passed in by `components/play-workbench.tsx` (TODO in file: swap for a shared store). `rankOpenTaps` and `repairRequestText` are real.
+- `lib/store.ts`: the repair list store (Phase 3). localStorage key `guttora.repair-list.v1`, versioned shape, in-memory fallback, `addTapOnce` guard. `components/use-repair-list.ts` is the hook over it.
+- `lib/repair-store.ts`: `rankOpenTaps` and `repairRequestText` only.
 - `components/drip-listener.tsx`: REAL microphone path (getUserMedia with echo cancellation, noise suppression and AGC off, BiquadFilterNode high-pass, ScriptProcessorNode 512-sample chunks) and REAL file path (decodeAudioData). TODO in file: move to an AudioWorklet.
 - `components/play-workbench.tsx`: spoon calibration, impact converter, add-to-list.
 - `components/repair-list.tsx`: ranked list, mark reported/fixed, copy repair request.

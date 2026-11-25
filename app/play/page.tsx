@@ -4,13 +4,22 @@ import { PlayWorkbench } from "@/components/play-workbench";
 import { Badge } from "@/components/ui/badge";
 import { adapterMode, getAdapter } from "@/lib/adapter";
 import { defaultGridCode } from "@/lib/data/seed";
+import { playQuerySchema } from "@/lib/schemas";
 
 export const metadata: Metadata = {
   title: "Bench: count your tap",
   description: "Count drips by ear, calibrate drop size with a spoon, and rank every leaking tap by yearly water and CO2e loss.",
 };
 
-export default async function PlayPage() {
+export default async function PlayPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  // ?reset=1 clears this phone's repair list before the demo. Any other value, or a
+  // repeated param, is treated as no reset instead of an error.
+  const query = playQuerySchema.safeParse(await searchParams);
+  const resetOnLoad = query.success && query.data.reset === "1";
   const adapter = getAdapter();
   const mode = adapterMode();
   const [residence, gridFactors] = await Promise.all([adapter.getResidence(), adapter.getGridFactors()]);
@@ -37,7 +46,7 @@ export default async function PlayPage() {
             : "The notes page bench runs in your browser on request."}
         </p>
       </header>
-      <PlayWorkbench residence={residence} gridFactors={gridFactors} defaultGridCode={defaultGridCode} />
+      <PlayWorkbench residence={residence} gridFactors={gridFactors} defaultGridCode={defaultGridCode} resetOnLoad={resetOnLoad} />
     </div>
   );
 }
