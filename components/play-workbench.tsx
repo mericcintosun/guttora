@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { DripListener } from "@/components/drip-listener";
+import { ImpactFigure, type ImpactFigureState } from "@/components/impact-figure";
 import { RepairList } from "@/components/repair-list";
 import { RouteSkeleton } from "@/components/route-states";
 import { useRepairList } from "@/components/use-repair-list";
@@ -59,6 +60,7 @@ export function PlayWorkbench({ residence, gridFactors, defaultGridCode, resetOn
       ? computeImpact({ dripsPerMinute: rate, mlPerDrop, measuredDrop: spoonDrops !== null, heater, deltaT: dT, gridCode })
       : null;
   const count = stats?.count ?? 0;
+  const figureState: ImpactFigureState = stats?.state ?? (typed > 0 ? "typed" : "idle");
 
   // One measurement, one row: the same inputs and the same drop count give the same key,
   // so a double click or a repeat press adds nothing (addTapOnce in lib/store.ts).
@@ -159,6 +161,16 @@ export function PlayWorkbench({ residence, gridFactors, defaultGridCode, resetOn
           <CardTitle>Yearly impact</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* DEMO step 3: kit signature 3, the litres figure and its bar tween together. */}
+          <ImpactFigure
+            count={count}
+            state={figureState}
+            litres={impact?.litres ?? null}
+            kwh={heater !== "none" && impact ? impact.kwh : null}
+            kgCo2e={heater !== "none" && impact ? impact.kgCo2e : null}
+            mlPerDrop={mlPerDrop}
+          />
+
           {liveRate === null ? (
             <label className="block text-sm font-bold">
               No live count yet. Type a rate in drops a minute
@@ -214,9 +226,7 @@ export function PlayWorkbench({ residence, gridFactors, defaultGridCode, resetOn
                 </>
               )}
             </div>
-          ) : (
-            <p className="text-sm">Start the counter, upload a recording or type a rate to see the yearly numbers.</p>
-          )}
+          ) : null}
 
           <p className="text-xs leading-relaxed">
             Sources: USGS drip calculator (15,140 drops a gallon), specific heat of water 4.186 kJ/kg K, UK DESNZ 2023 gas
