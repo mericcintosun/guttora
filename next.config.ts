@@ -15,6 +15,19 @@ const brandFiles = fs.existsSync(brandDir)
 
 const nextConfig: NextConfig = {
   env: { NEXT_PUBLIC_BRAND_FILES: brandFiles.join(",") },
+  // The microphone is the only browser permission Guttora uses, and only for this origin.
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "Permissions-Policy", value: "microphone=(self), camera=(), geolocation=()" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;
