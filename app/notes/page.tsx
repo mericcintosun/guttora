@@ -2,18 +2,20 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { AccuracyBench } from "@/components/accuracy-bench";
 import { Card, CardContent } from "@/components/ui/card";
-import { gridFactors } from "@/lib/data";
+import { getAdapter } from "@/lib/adapter";
 import { DEFAULT_CONFIG } from "@/lib/drip-detector";
 import { annualLitres, DEFAULT_ML_PER_DROP, fmt, heaters, USGS_DROPS_PER_GALLON } from "@/lib/impact";
 
 export const metadata: Metadata = {
-  title: "Notes: method, numbers and sources | Guttora",
+  title: "Notes: method, numbers and sources",
   description: "How Guttora hears a drop, turns it into litres, kWh and CO2e, and where every constant comes from.",
 };
 
 const hopMs = Math.round((DEFAULT_CONFIG.hop / 44100) * 1000 * 10) / 10;
 
-export default function NotesPage() {
+export default async function NotesPage() {
+  const adapter = getAdapter();
+  const [gridFactors, benchClips] = await Promise.all([adapter.getGridFactors(), adapter.getBenchClips()]);
   return (
     <article className="mx-auto max-w-prose space-y-12 leading-relaxed">
       <header className="guttora-wipe-group space-y-3">
@@ -100,7 +102,7 @@ export default function NotesPage() {
           detector on them. Synthetic clips test the logic, not a real bathroom; counts from our own recorded taps are listed in
           the README as we collect them.
         </p>
-        <AccuracyBench />
+        <AccuracyBench clips={benchClips} />
       </section>
 
       <section className="space-y-4">

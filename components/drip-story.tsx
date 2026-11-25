@@ -1,98 +1,119 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import Link from "next/link";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { residenceName, storyTapId, taps } from "@/lib/data";
+import type { Tap } from "@/lib/types";
 import { annualLitres, DEFAULT_ML_PER_DROP, fmt, tapImpact } from "@/lib/impact";
 import { rankOpenTaps } from "@/lib/repair-store";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
-const tap = taps.find((t) => t.id === storyTapId)!;
-const impact = tapImpact(tap);
-const defaultLitres = annualLitres(tap.dripsPerMinute, DEFAULT_ML_PER_DROP);
-const ranked = rankOpenTaps(taps, "TR");
-const storyRank = ranked.findIndex((r) => r.tap.id === tap.id) + 1;
-const openTotal = ranked.reduce((a, r) => a + r.litres, 0);
-const heardIn30s = Math.round(tap.dripsPerMinute / 2);
 const ordinals = ["first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth"];
 
-const CHAPTERS = [
-  {
-    word: "Drop",
-    title: "One drop, ignored since September",
-    body: (
-      <>
-        Room C-214, Block C, {residenceName}. The shower mixer has dripped since the start of term. Elif reported it twice.
-        Both tickets said &ldquo;tap dripping&rdquo; and nothing else, so both sank to the bottom of the maintenance queue. A
-        single drop looks like nothing, and nobody fixes nothing.
-      </>
-    ),
-  },
-  {
-    word: "Listen",
-    title: "The phone hears every drop",
-    body: (
-      <>
-        She props her phone on the soap shelf and taps Start. Guttora listens above 1 kHz, where the plink of a drop lives and
-        most voices do not, and marks every sudden jump in spectral energy. After 30 seconds it has heard {heardIn30s} drops:{" "}
-        {tap.dripsPerMinute} a minute, spaced so evenly (the intervals vary by {Math.round(tap.cv * 100)}%) that it calls this a
-        regular drip. At the textbook drop size that is already {fmt(defaultLitres)} litres a year.
-      </>
-    ),
-  },
-  {
-    word: "Spoon",
-    title: "A teaspoon replaces the guess",
-    body: (
-      <>
-        Drop size is the number every other leak calculator guesses. Elif holds a {tap.spoonMl} mL teaspoon under the mixer and
-        presses &ldquo;Spoon is full&rdquo; when it brims: {tap.spoonDrops} drops, so this tap&rsquo;s drop is{" "}
-        {fmt(impact.mlPerDrop, 2)} mL, not the 0.25 mL USGS default. The yearly loss moves to {fmt(impact.litres)} litres.
-      </>
-    ),
-  },
-  {
-    word: "Heat",
-    title: "It is the hot side",
-    body: (
-      <>
-        Heating {fmt(impact.litres)} litres by {tap.deltaT} &deg;C in a 95% efficient electric boiler takes about{" "}
-        {fmt(impact.kwh)} kWh. On the Turkish grid, at roughly 0.44 kg CO2e per kWh, that is about {fmt(impact.kgCo2e)} kg of
-        CO2e a year from one shower mixer nobody thought was worth a ticket.
-      </>
-    ),
-  },
-  {
-    word: "Rank",
-    title: "Now it has a place in the queue",
-    body: (
-      <>
-        Elif adds the tap to the residence repair list. Ranked by yearly loss, the {ranked[0].tap.label.toLowerCase()} goes
-        first at {fmt(ranked[0].litres)} litres and C-214 lands {ordinals[storyRank - 1]}. The {ranked.length} open taps lose{" "}
-        {fmt(openTotal)} litres a year between them, and the list copies straight into a maintenance ticket with every number
-        attached. Your turn:{" "}
-        <Link href="/play" className="font-bold text-primary underline decoration-2 underline-offset-4">
-          open the bench and point it at your own tap
-        </Link>
-        .
-      </>
-    ),
-  },
-];
+interface Chapter {
+  word: string;
+  title: string;
+  body: ReactNode;
+}
+
+// Everything the story derives from the residence snapshot. Built from props so the
+// seed reaches the page through lib/adapter.ts instead of a module import here.
+function buildStory(taps: Tap[], residenceName: string, storyTapId: string) {
+  const tap = taps.find((t) => t.id === storyTapId);
+  if (!tap) return null;
+  const impact = tapImpact(tap);
+  const defaultLitres = annualLitres(tap.dripsPerMinute, DEFAULT_ML_PER_DROP);
+  const ranked = rankOpenTaps(taps, "TR");
+  const storyRank = ranked.findIndex((r) => r.tap.id === tap.id) + 1;
+  const openTotal = ranked.reduce((a, r) => a + r.litres, 0);
+  const heardIn30s = Math.round(tap.dripsPerMinute / 2);
+  const leader = ranked[0] ?? { tap, litres: impact.litres };
+  const rankWord = ordinals[storyRank - 1] ?? "on the list";
+
+  const chapters: Chapter[] = [
+    {
+      word: "Drop",
+      title: "One drop, ignored since September",
+      body: (
+        <>
+          Room C-214, Block C, {residenceName}. The shower mixer has dripped since the start of term. Elif reported it twice.
+          Both tickets said &ldquo;tap dripping&rdquo; and nothing else, so both sank to the bottom of the maintenance queue. A
+          single drop looks like nothing, and nobody fixes nothing.
+        </>
+      ),
+    },
+    {
+      word: "Listen",
+      title: "The phone hears every drop",
+      body: (
+        <>
+          She props her phone on the soap shelf and taps Start. Guttora listens above 1 kHz, where the plink of a drop lives and
+          most voices do not, and marks every sudden jump in spectral energy. After 30 seconds it has heard {heardIn30s} drops:{" "}
+          {tap.dripsPerMinute} a minute, spaced so evenly (the intervals vary by {Math.round(tap.cv * 100)}%) that it calls this a
+          regular drip. At the textbook drop size that is already {fmt(defaultLitres)} litres a year.
+        </>
+      ),
+    },
+    {
+      word: "Spoon",
+      title: "A teaspoon replaces the guess",
+      body: (
+        <>
+          Drop size is the number every other leak calculator guesses. Elif holds a {tap.spoonMl} mL teaspoon under the mixer and
+          presses &ldquo;Spoon is full&rdquo; when it brims: {tap.spoonDrops} drops, so this tap&rsquo;s drop is{" "}
+          {fmt(impact.mlPerDrop, 2)} mL, not the 0.25 mL USGS default. The yearly loss moves to {fmt(impact.litres)} litres.
+        </>
+      ),
+    },
+    {
+      word: "Heat",
+      title: "It is the hot side",
+      body: (
+        <>
+          Heating {fmt(impact.litres)} litres by {tap.deltaT} &deg;C in a 95% efficient electric boiler takes about{" "}
+          {fmt(impact.kwh)} kWh. On the Turkish grid, at roughly 0.44 kg CO2e per kWh, that is about {fmt(impact.kgCo2e)} kg of
+          CO2e a year from one shower mixer nobody thought was worth a ticket.
+        </>
+      ),
+    },
+    {
+      word: "Rank",
+      title: "Now it has a place in the queue",
+      body: (
+        <>
+          Elif adds the tap to the residence repair list. Ranked by yearly loss, the {leader.tap.label.toLowerCase()} goes
+          first at {fmt(leader.litres)} litres and C-214 lands {rankWord}. The {ranked.length} open taps lose{" "}
+          {fmt(openTotal)} litres a year between them, and the list copies straight into a maintenance ticket with every number
+          attached. Your turn:{" "}
+          <Link href="/play" className="font-bold text-primary underline decoration-2 underline-offset-4">
+            open the bench and point it at your own tap
+          </Link>
+          .
+        </>
+      ),
+    },
+  ];
+
+  return { tap, impact, ranked, heardIn30s, chapters };
+}
+
+type Story = NonNullable<ReturnType<typeof buildStory>>;
 
 const seg = (p: number, a: number, b: number) => Math.min(1, Math.max(0, (p - a) / (b - a)));
 
 // Fixed pseudo-random noise floor so server and client render the same bars.
 const NOISE = Array.from({ length: 60 }, (_, i) => 4 + 2 * ((i * 7 + (i % 5) * 3) % 5));
 
-function Readout({ p, onJump }: { p: number; onJump: (i: number) => void }) {
+function Readout({ story, p, onJump }: { story: Story; p: number; onJump: (i: number) => void }) {
+  const { tap, impact, ranked, heardIn30s, chapters: CHAPTERS } = story;
   const active = Math.min(CHAPTERS.length - 1, Math.floor(p * CHAPTERS.length));
   const drops = p < 0.08 ? 0 : p < 0.2 ? 1 : 1 + Math.round((heardIn30s - 1) * seg(p, 0.2, 0.36));
   const listening = p >= 0.2;
@@ -175,7 +196,33 @@ function Readout({ p, onJump }: { p: number; onJump: (i: number) => void }) {
   );
 }
 
-export function DripStory() {
+export interface DripStoryProps {
+  taps: Tap[];
+  residenceName: string;
+  storyTapId: string;
+}
+
+export function DripStory({ taps, residenceName, storyTapId }: DripStoryProps) {
+  const story = useMemo(() => buildStory(taps, residenceName, storyTapId), [taps, residenceName, storyTapId]);
+
+  if (!story) {
+    return (
+      <Card>
+        <CardContent className="space-y-3">
+          <p className="font-bold">No tap to follow yet. Measure one on the bench.</p>
+          <Button asChild>
+            <Link href="/play">Open the bench</Link>
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return <StoryScene story={story} />;
+}
+
+function StoryScene({ story }: { story: Story }) {
+  const CHAPTERS = story.chapters;
   const rootRef = useRef<HTMLDivElement>(null);
   const figureRef = useRef<HTMLDivElement>(null);
   const chapterRefs = useRef<Array<HTMLElement | null>>([]);
@@ -241,7 +288,7 @@ export function DripStory() {
   return (
     <div ref={rootRef} className="relative">
       <div ref={figureRef} className="relative z-10 bg-background pb-3 motion-reduce:sticky motion-reduce:top-[72px]">
-        <Readout p={p} onJump={jump} />
+        <Readout story={story} p={p} onJump={jump} />
       </div>
       <div>
         {CHAPTERS.map((c, i) => (

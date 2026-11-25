@@ -4,9 +4,9 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { benchClips } from "@/lib/data";
 import { detectInBuffer, type DripState } from "@/lib/drip-detector";
 import { synthesizeClip } from "@/lib/synth";
+import type { BenchClip } from "@/lib/types";
 
 interface Row {
   trueDrops: number;
@@ -23,9 +23,20 @@ const STATE_LABEL: Record<DripState, string> = {
   quiet: "no regular drip",
 };
 
-export function AccuracyBench() {
+export function AccuracyBench({ clips }: { clips: BenchClip[] }) {
+  const benchClips = clips;
   const [rows, setRows] = useState<Record<string, Row>>({});
   const [running, setRunning] = useState(false);
+
+  if (benchClips.length === 0) {
+    return (
+      <Card>
+        <CardContent>
+          <p className="font-bold">No bench clips loaded.</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   // Clips are synthesized and analysed one per animation frame so the page stays responsive.
   const run = () => {
@@ -56,7 +67,7 @@ export function AccuracyBench() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Detector bench, re-run it yourself</CardTitle>
+        <CardTitle>Synthetic detector bench, re-run it yourself</CardTitle>
         <p className="text-sm leading-relaxed">
           Six 30 second clips are generated in your browser with a known number of drops, plus hiss, a 100 Hz fan hum or a
           voice-like sound under 1 kHz. The same detector used on the bench counts them.

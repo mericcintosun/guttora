@@ -1,13 +1,20 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { DripStory } from "@/components/drip-story";
 import { SceneSlot } from "@/components/scene-slot";
 import { Button } from "@/components/ui/button";
+import { getAdapter } from "@/lib/adapter";
 import { annualLitres, DEFAULT_ML_PER_DROP, fmt } from "@/lib/impact";
+
+export const metadata: Metadata = {
+  title: "Story: one dripping tap, one year",
+};
 
 const oneDropASecond = annualLitres(60, DEFAULT_ML_PER_DROP);
 
 // L3 editorial: one centered column at max-w-prose, magazine order, numbers inside sentences.
-export default function Home() {
+export default async function Home() {
+  const { taps, residenceName, storyTapId } = await getAdapter().getResidence();
   return (
     <article className="mx-auto max-w-prose">
       <header className="guttora-wipe-group space-y-5">
@@ -40,7 +47,7 @@ export default function Home() {
       </div>
 
       <div className="mt-12">
-        <DripStory />
+        <DripStory taps={taps} residenceName={residenceName} storyTapId={storyTapId} />
       </div>
 
       <section className="my-16 rounded-sm border-2 border-border bg-primary p-6 text-primary-foreground shadow-hard">

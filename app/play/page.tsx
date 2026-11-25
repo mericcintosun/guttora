@@ -1,13 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PlayWorkbench } from "@/components/play-workbench";
+import { getAdapter } from "@/lib/adapter";
+import { defaultGridCode } from "@/lib/data/seed";
 
 export const metadata: Metadata = {
-  title: "Bench: count your tap | Guttora",
+  title: "Bench: count your tap",
   description: "Count drips by ear, calibrate drop size with a spoon, and rank every leaking tap by yearly water and CO2e loss.",
 };
 
-export default function PlayPage() {
+export default async function PlayPage() {
+  const adapter = getAdapter();
+  const [residence, gridFactors] = await Promise.all([adapter.getResidence(), adapter.getGridFactors()]);
   return (
     <div className="mx-auto max-w-3xl">
       <header className="guttora-wipe-group mb-8 space-y-3">
@@ -21,7 +25,7 @@ export default function PlayPage() {
           .
         </p>
       </header>
-      <PlayWorkbench />
+      <PlayWorkbench residence={residence} gridFactors={gridFactors} defaultGridCode={defaultGridCode} />
     </div>
   );
 }

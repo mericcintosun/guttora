@@ -6,8 +6,8 @@ import { RepairList } from "@/components/repair-list";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { defaultGridCode, gridFactors, taps, type HeaterKind, type Tap } from "@/lib/data";
 import type { DripStats } from "@/lib/drip-detector";
+import type { GridFactor, HeaterKind, ResidenceSnapshot, Tap } from "@/lib/types";
 import { computeImpact, DEFAULT_ML_PER_DROP, fmt, gridKgPerKwh, heaters, mlPerDropFromSpoon } from "@/lib/impact";
 import { loadRepairList, resetRepairList, saveRepairList } from "@/lib/repair-store";
 
@@ -17,7 +17,15 @@ const HEATER_OPTIONS: Array<{ value: HeaterKind; label: string }> = [
   { value: "gas", label: "Hot, gas" },
 ];
 
-export function PlayWorkbench() {
+export interface PlayWorkbenchProps {
+  /** The seed residence, served by lib/adapter.ts through app/play/page.tsx. */
+  residence: ResidenceSnapshot;
+  gridFactors: GridFactor[];
+  defaultGridCode: string;
+}
+
+export function PlayWorkbench({ residence, gridFactors, defaultGridCode }: PlayWorkbenchProps) {
+  const taps = residence.taps;
   const [stats, setStats] = useState<DripStats | null>(null);
   const [manualRate, setManualRate] = useState("");
   const [spoonMl, setSpoonMl] = useState(5);
@@ -33,9 +41,9 @@ export function PlayWorkbench() {
   const [lastAdded, setLastAdded] = useState<string | null>(null);
 
   useEffect(() => {
-    setList(loadRepairList());
+    setList(loadRepairList(taps));
     setLoaded(true);
-  }, []);
+  }, [taps]);
 
   const changeList = (next: Tap[]) => {
     setList(next);
@@ -224,7 +232,8 @@ export function PlayWorkbench() {
         list={list}
         gridCode={gridCode}
         onChange={changeList}
-        onReset={() => setList(resetRepairList())}
+        onReset={() => setList(resetRepairList(taps))}
+        residenceName={residence.residenceName}
         highlightId={lastAdded}
       />
     </div>

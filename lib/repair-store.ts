@@ -1,21 +1,21 @@
-import { taps, type Tap } from "@/lib/data";
 import { fmt, tapImpact } from "@/lib/impact";
+import type { Tap } from "@/lib/types";
 
 const KEY = "guttora.repair-list.v1";
 
-// Repair list persistence adapter. Today it is the browser's localStorage, seeded
-// with the residence's taps on first load.
+// Repair list persistence. Today it is the browser's localStorage, seeded with the
+// residence's taps (served by lib/adapter.ts) on first load.
 // TODO: swap localStorage for a shared store (for example a Supabase table keyed by
 // residence) so every resident of a block edits the same list.
-export function loadRepairList(): Tap[] {
-  if (typeof window === "undefined") return taps;
+export function loadRepairList(seed: Tap[]): Tap[] {
+  if (typeof window === "undefined") return seed;
   try {
     const raw = window.localStorage.getItem(KEY);
-    if (!raw) return taps;
+    if (!raw) return seed;
     const parsed = JSON.parse(raw) as Tap[];
-    return Array.isArray(parsed) ? parsed : taps;
+    return Array.isArray(parsed) ? parsed : seed;
   } catch {
-    return taps;
+    return seed;
   }
 }
 
@@ -27,13 +27,13 @@ export function saveRepairList(list: Tap[]): void {
   }
 }
 
-export function resetRepairList(): Tap[] {
+export function resetRepairList(seed: Tap[]): Tap[] {
   try {
     window.localStorage.removeItem(KEY);
   } catch {
     // ignore
   }
-  return taps;
+  return seed;
 }
 
 /** Open taps ranked by yearly water loss, worst first. */

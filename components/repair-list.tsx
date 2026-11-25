@@ -4,19 +4,20 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { residenceName, type Tap } from "@/lib/data";
 import { fmt, tapImpact } from "@/lib/impact";
 import { rankOpenTaps, repairRequestText } from "@/lib/repair-store";
+import type { Tap } from "@/lib/types";
 
 interface RepairListProps {
   list: Tap[];
   gridCode: string;
+  residenceName: string;
   onChange: (next: Tap[]) => void;
   onReset: () => void;
   highlightId?: string | null;
 }
 
-export function RepairList({ list, gridCode, onChange, onReset, highlightId }: RepairListProps) {
+export function RepairList({ list, gridCode, residenceName, onChange, onReset, highlightId }: RepairListProps) {
   const [copied, setCopied] = useState<"idle" | "done" | "failed">("idle");
   const ranked = rankOpenTaps(list, gridCode);
   const fixed = list.filter((t) => t.status === "fixed").map((tap) => ({ tap, ...tapImpact(tap, gridCode) }));
