@@ -3,6 +3,7 @@ import Link from "next/link";
 import { AccuracyBench } from "@/components/accuracy-bench";
 import { Card, CardContent } from "@/components/ui/card";
 import { getAdapter } from "@/lib/adapter";
+import { BENCH_TOLERANCE_DROPS } from "@/lib/config";
 import { DEFAULT_CONFIG } from "@/lib/drip-detector";
 import { annualLitres, DEFAULT_ML_PER_DROP, fmt, heaters, USGS_DROPS_PER_GALLON } from "@/lib/impact";
 
@@ -15,7 +16,11 @@ const hopMs = Math.round((DEFAULT_CONFIG.hop / 44100) * 1000 * 10) / 10;
 
 export default async function NotesPage() {
   const adapter = getAdapter();
-  const [gridFactors, benchClips] = await Promise.all([adapter.getGridFactors(), adapter.getBenchClips()]);
+  const [gridFactors, benchClips, benchReport] = await Promise.all([
+    adapter.getGridFactors(),
+    adapter.getBenchClips(),
+    adapter.getBenchReport(),
+  ]);
   return (
     <article className="mx-auto max-w-prose space-y-12 leading-relaxed">
       <header className="guttora-wipe-group space-y-3">
@@ -98,11 +103,11 @@ export default async function NotesPage() {
       <section className="space-y-4">
         <h2 className="text-3xl">Does the counter count right?</h2>
         <p>
-          Press the button below and the bench builds six recordings from scratch, with a drop count we know, and runs the
-          detector on them. Synthetic clips test the logic, not a real bathroom; counts from our own recorded taps are listed in
-          the README as we collect them.
+          The bench builds six recordings from scratch, each with a drop count we know, and runs the detector on them. Synthetic
+          clips test the logic, not a real bathroom; counts from our own recorded taps are listed in the README as we collect
+          them.
         </p>
-        <AccuracyBench clips={benchClips} />
+        <AccuracyBench clips={benchClips} report={benchReport} tolerance={BENCH_TOLERANCE_DROPS} />
       </section>
 
       <section className="space-y-4">

@@ -4,16 +4,20 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { scoreRun } from "@/lib/bench-score";
 import { detectInBuffer, type DripState } from "@/lib/drip-detector";
 import { synthesizeClip } from "@/lib/synth";
-import type { BenchClip } from "@/lib/types";
+import type { BenchClip, BenchReport } from "@/lib/types";
 
 interface Row {
   trueDrops: number;
   counted: number;
   state: DripState;
   ms: number;
+  exact: boolean;
 }
+
+type CountedBy = "server" | "browser" | "none";
 
 const STATE_LABEL: Record<DripState, string> = {
   idle: "idle",
@@ -23,9 +27,54 @@ const STATE_LABEL: Record<DripState, string> = {
   quiet: "no regular drip",
 };
 
-export function AccuracyBench({ clips }: { clips: BenchClip[] }) {
+const MONTHS = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
+/** Same text on server and client, so hydration never differs by locale or time zone. */
+function formatRanAt(iso: string | null): string {
+  if (!iso) return "at build time";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "at build time";
+  return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+}
+
+function rowsFromReport(report: BenchReport): Record<string, Row> {
+  const out: Record<string, Row> = {};
+  if (report.source !== "real") return out;
+  for (const r of report.rows) {
+    if (r.trueDrops === null || r.counted === null || r.state === null || r.ms === null || r.exact === null) continue;
+    out[r.id] = { trueDrops: r.trueDrops, counted: r.counted, state: r.state, ms: r.ms, exact: r.exact };
+  }
+  return out;
+}
+
+export function AccuracyBench({
+  clips,
+  report,
+  tolerance,
+}: {
+  clips: BenchClip[];
+  report: BenchReport;
+  /** BENCH_TOLERANCE_DROPS, passed in by the server page so this client file never reads config. */
+  tolerance: number;
+}) {
   const benchClips = clips;
-  const [rows, setRows] = useState<Record<string, Row>>({});
+  const [rows, setRows] = useState<Record<string, Row>>(() => rowsFromReport(report));
+  const [countedBy, setCountedBy] = useState<CountedBy>(() =>
+    Object.keys(rowsFromReport(report)).length > 0 ? "server" : "none"
+  );
   const [running, setRunning] = useState(false);
 
   if (benchClips.length === 0) {
@@ -47,13 +96,21 @@ export function AccuracyBench({ clips }: { clips: BenchClip[] }) {
       const clip = benchClips[i];
       if (!clip) {
         setRunning(false);
+        setCountedBy("browser");
         return;
       }
       const t0 = performance.now();
       const synth = synthesizeClip(clip);
       const { stats } = detectInBuffer(synth.samples, synth.sampleRate);
       const ms = performance.now() - t0;
-      setRows((r) => ({ ...r, [clip.id]: { trueDrops: synth.trueDrops, counted: stats.count, state: stats.state, ms } }));
+      const { exact } = scoreRun(
+        { hasDrops: clip.hasDrops, trueDrops: synth.trueDrops, counted: stats.count, state: stats.state },
+        tolerance
+      );
+      setRows((r) => ({
+        ...r,
+        [clip.id]: { trueDrops: synth.trueDrops, counted: stats.count, state: stats.state, ms, exact },
+      }));
       i++;
       window.requestAnimationFrame(next);
     };
@@ -63,14 +120,31 @@ export function AccuracyBench({ clips }: { clips: BenchClip[] }) {
   const done = Object.values(rows);
   const totalTrue = done.reduce((a, r) => a + r.trueDrops, 0);
   const totalErr = done.reduce((a, r) => a + Math.abs(r.counted - r.trueDrops), 0);
+  const passed = done.filter((r) => r.exact).length;
+
+  let sourceLine: string;
+  if (running) {
+    sourceLine = "Counting in your browser now.";
+  } else if (countedBy === "browser") {
+    sourceLine = "Counted in your browser just now.";
+  } else if (report.source === "real" && countedBy === "server") {
+    sourceLine = `Counted on the server by the same detector when this page was built, ${formatRanAt(report.ranAt)}. Press Run again to count in your browser.`;
+  } else {
+    sourceLine =
+      "Sample mode: these synthetic clips have not been counted yet. Press Run the bench to count them in your browser.";
+  }
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>Synthetic detector bench, re-run it yourself</CardTitle>
         <p className="text-sm leading-relaxed">
-          Six 30 second clips are generated in your browser with a known number of drops, plus hiss, a 100 Hz fan hum or a
-          voice-like sound under 1 kHz. The same detector used on the bench counts them.
+          Six 30 second clips are generated with a known number of drops, plus hiss, a 100 Hz fan hum or a voice-like sound
+          under 1 kHz. The same detector used on the bench counts them. A clip passes when the count is within {tolerance} drop
+          of the truth and the verdict is right.
+        </p>
+        <p className="text-sm font-bold leading-relaxed" aria-live="polite">
+          {sourceLine}
         </p>
       </CardHeader>
       <CardContent className="overflow-x-auto p-0">
@@ -86,7 +160,6 @@ export function AccuracyBench({ clips }: { clips: BenchClip[] }) {
           <tbody>
             {benchClips.map((c) => {
               const r = rows[c.id];
-              const exact = r && r.counted === r.trueDrops;
               return (
                 <tr key={c.id} className="border-b border-border/30 last:border-b-0">
                   <td className="px-4 py-2">
@@ -97,7 +170,7 @@ export function AccuracyBench({ clips }: { clips: BenchClip[] }) {
                   <td className="px-4 py-2 tabular-nums">{r ? r.trueDrops : "not run"}</td>
                   <td className="px-4 py-2 tabular-nums">{r ? r.counted : running ? "counting" : "not run"}</td>
                   <td className="px-4 py-2">
-                    {r ? <Badge variant={exact ? "ok" : "warn"}>{STATE_LABEL[r.state]}</Badge> : null}
+                    {r ? <Badge variant={r.exact ? "ok" : "warn"}>{STATE_LABEL[r.state]}</Badge> : null}
                   </td>
                 </tr>
               );
@@ -111,9 +184,9 @@ export function AccuracyBench({ clips }: { clips: BenchClip[] }) {
         </Button>
         {done.length === benchClips.length ? (
           <p className="text-sm">
-            {totalErr === 0
+            {totalErr === 0 && passed === done.length
               ? `All ${totalTrue} synthetic drops counted exactly, and the closed tap reads as no regular drip.`
-              : `${totalErr} counting errors across ${totalTrue} synthetic drops.`}
+              : `${passed} of ${done.length} clips passed, with ${totalErr} counting errors across ${totalTrue} synthetic drops.`}
           </p>
         ) : null}
       </CardFooter>

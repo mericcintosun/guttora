@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PlayWorkbench } from "@/components/play-workbench";
-import { getAdapter } from "@/lib/adapter";
+import { Badge } from "@/components/ui/badge";
+import { adapterMode, getAdapter } from "@/lib/adapter";
 import { defaultGridCode } from "@/lib/data/seed";
 
 export const metadata: Metadata = {
@@ -11,6 +12,7 @@ export const metadata: Metadata = {
 
 export default async function PlayPage() {
   const adapter = getAdapter();
+  const mode = adapterMode();
   const [residence, gridFactors] = await Promise.all([adapter.getResidence(), adapter.getGridFactors()]);
   return (
     <div className="mx-auto max-w-3xl">
@@ -23,6 +25,16 @@ export default async function PlayPage() {
             home page
           </Link>
           .
+        </p>
+        <p className="max-w-prose text-sm leading-relaxed">
+          <Badge variant="ok" className="mr-2 align-middle">
+            Live
+          </Badge>
+          The drip counter uses this phone&rsquo;s microphone inside this tab. The starting repair list is sample data for{" "}
+          {residence.residenceName}.{" "}
+          {mode === "real"
+            ? "The notes page bench is counted on the server."
+            : "The notes page bench runs in your browser on request."}
         </p>
       </header>
       <PlayWorkbench residence={residence} gridFactors={gridFactors} defaultGridCode={defaultGridCode} />
