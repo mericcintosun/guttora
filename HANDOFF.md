@@ -1,5 +1,40 @@
 # HANDOFF: Guttora
 
+## Phase 1 result
+
+**Goal:** add the seams every later phase depends on (demo contract, adapter, API stubs, shell) without changing how any screen looks.
+
+**Status (per slice):**
+- Slice 1, demo contract and agent rules: done. `DEMO.md` (7 steps, `Demo start route: /`) and `CLAUDE.md`.
+- Slice 2, typed core, seed and adapter: done. `lib/types.ts`, `lib/data/seed.ts`, `lib/adapter.ts`, `scripts/seed.ts`, `npm run seed`, `scripts` excluded in tsconfig, `.env.example` lists `ADAPTER_MODE` and `NEXT_PUBLIC_BRAND_FILES`.
+- Slice 3, API stubs: done. `GET /api/residence`, `/api/grid-factors`, `/api/bench-clips`.
+- Slice 4, pages through the adapter: done. `/`, `/play`, `/notes` are async server components calling `getAdapter()`; story, workbench, repair list and accuracy bench take data as props; empty states for a missing story tap and for zero bench clips; three `loading.tsx` files.
+- Slice 5, shell: done. Title template, per page titles, `components/site-nav.tsx` with `aria-current="page"` and an active `border-border bg-card` state, error and not-found pages name Guttora and link to `/`, OG hexes moved to `lib/og-palette.ts`.
+
+**Decisions:**
+- `lib/data.ts` is now a re-export of `lib/types.ts` and `lib/data/seed.ts`, so `lib/impact.ts` and `lib/synth.ts` (never-touch files) still import from `@/lib/data` unchanged.
+- `realAdapter` delegates to `fakeAdapter` until Phase 2 puts a shared repair store behind it.
+- `lib/og-palette.ts` is the one place outside `app/globals.css` that holds hexes, because Satori cannot read CSS variables.
+- `defaultGridCode` is a constant, not residence data, so `app/play/page.tsx` imports it from `lib/data/seed.ts` and passes it as a prop. `lib/impact.ts` still reads grid factors from the seed for its own math (not touched, per the Never list).
+- The story keeps its GSAP block verbatim inside a new inner `StoryScene`; `DripStory` only builds the data from props and renders the empty state when the story tap is missing.
+- The accuracy bench title now says "Synthetic detector bench" so the demo step 7 label is on screen.
+
+**Failed attempts:** none.
+
+**Files changed:** `DEMO.md`, `CLAUDE.md`, `lib/types.ts`, `lib/data/seed.ts`, `lib/data.ts`, `lib/adapter.ts`, `lib/og-palette.ts`, `lib/repair-store.ts`, `scripts/seed.ts`, `package.json`, `tsconfig.json`, `.env.example`, `app/api/residence/route.ts`, `app/api/grid-factors/route.ts`, `app/api/bench-clips/route.ts`, `app/page.tsx`, `app/play/page.tsx`, `app/notes/page.tsx`, `app/loading.tsx`, `app/play/loading.tsx`, `app/notes/loading.tsx`, `app/layout.tsx`, `app/error.tsx`, `app/not-found.tsx`, `app/opengraph-image.tsx`, `components/drip-story.tsx`, `components/play-workbench.tsx`, `components/repair-list.tsx`, `components/accuracy-bench.tsx`, `components/site-header.tsx`, `components/site-nav.tsx`, `HANDOFF.md`, `.farm-commits.json`.
+
+**Commands run:** none, agent has no shell. `npm run build`, `npm run seed` and the deploy are unverified.
+
+**Open questions:**
+- `npm run seed` uses `node --experimental-strip-types`, which needs Node 22.6 or newer. Is that the Node version on the runner?
+- The API routes and pages have no dynamic APIs, so Next may prerender them at build time and read `ADAPTER_MODE` then. Fine while both modes serve the seed; Phase 2 may want `export const dynamic = "force-dynamic"` on them.
+
+**Closing commit:** `faz-1: seams under the bench (demo contract, adapter, api stubs, shell)`
+
+**Next best step:** Phase 2 field-tests the detector on a real tap and puts the shared repair store behind `realAdapter`.
+
+---
+
 You are picking up a working Next.js scaffold. Read this file, then `IDENTITY.md`, then start on the Mission list. Keep `npm run build` green after every change.
 
 ## 1. Context
@@ -35,11 +70,17 @@ Butter ground, cream panels, 2px ink borders, hard 4px offset shadows, sharp cor
 - `/notes` -> `app/notes/page.tsx`: method, formulas, grid factor table, live accuracy bench, limits, sources.
 
 **File map:**
-- `lib/data.ts`: types plus seed data: 10 taps in "Ayazağa Student Residence", 7 grid factors, 6 synthetic bench clip specs.
+- `lib/types.ts`: `Tap`, `HeaterKind`, `TapStatus`, `GridFactor`, `BenchClip`, `ResidenceSnapshot`, `ApiResponse<T>`.
+- `lib/data/seed.ts`: seed data: 10 taps in "Ayazağa Student Residence", 7 grid factors, 6 synthetic bench clip specs. Type-only imports so Node can run it.
+- `lib/data.ts`: re-export of `lib/types.ts` and `lib/data/seed.ts` for older imports (`lib/impact.ts`, `lib/synth.ts`).
+- `lib/adapter.ts`: `GuttoraAdapter`, `fakeAdapter` (seed), `realAdapter` (delegates to fake for now), `adapterMode()` from `ADAPTER_MODE`, `getAdapter()`. Pages and `app/api/*/route.ts` read data only through it.
+- `lib/og-palette.ts`: the four OG card hexes, mirrored from IDENTITY.md for Satori.
+- `scripts/seed.ts`: writes `fixtures/seed-snapshot.json` deterministically (`npm run seed`).
+- `components/site-nav.tsx`: client nav with `aria-current="page"`.
 - `lib/drip-detector.ts`: REAL. Radix-2 FFT, spectral flux on bins above 1 kHz, median + MAD threshold, 120 ms refractory, CV regularity, `detectInBuffer` for files.
 - `lib/synth.ts`: REAL. Deterministic synthetic drip recordings for the bench.
 - `lib/impact.ts`: REAL. USGS default drop, litres/year, kWh, kg CO2e, number formatting.
-- `lib/repair-store.ts`: MOCK ADAPTER. `loadRepairList`, `saveRepairList`, `resetRepairList` use localStorage seeded from `lib/data.ts` (TODO in file: swap for a shared store). `rankOpenTaps` and `repairRequestText` are real.
+- `lib/repair-store.ts`: MOCK STORE. `loadRepairList(seed)`, `saveRepairList`, `resetRepairList(seed)` use localStorage (key `guttora.repair-list.v1`) seeded with the adapter's taps passed in by `components/play-workbench.tsx` (TODO in file: swap for a shared store). `rankOpenTaps` and `repairRequestText` are real.
 - `components/drip-listener.tsx`: REAL microphone path (getUserMedia with echo cancellation, noise suppression and AGC off, BiquadFilterNode high-pass, ScriptProcessorNode 512-sample chunks) and REAL file path (decodeAudioData). TODO in file: move to an AudioWorklet.
 - `components/play-workbench.tsx`: spoon calibration, impact converter, add-to-list.
 - `components/repair-list.tsx`: ranked list, mark reported/fixed, copy repair request.

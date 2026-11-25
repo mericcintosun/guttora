@@ -1,14 +1,11 @@
 import { ImageResponse } from "next/og";
+import { OG_GROUND as GROUND, OG_INK as INK, OG_ROYAL as ROYAL, OG_SURFACE as SURFACE } from "@/lib/og-palette";
 
 export const alt = "Guttora: count a dripping tap by ear and see its yearly water and CO2e loss";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-// Colors from IDENTITY.md (D10 butter). ImageResponse cannot read CSS variables.
-const GROUND = "#ffd63d";
-const SURFACE = "#fff3c4";
-const INK = "#141414";
-const ROYAL = "#1c4fd8";
+// Colors from IDENTITY.md (D10 butter) via lib/og-palette.ts. ImageResponse cannot read CSS variables.
 
 export default function OpengraphImage() {
   return new ImageResponse(

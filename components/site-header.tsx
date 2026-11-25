@@ -1,12 +1,6 @@
 import Link from "next/link";
 import { BrandMark } from "@/components/brand-mark";
-import { Button } from "@/components/ui/button";
-
-const NAV = [
-  { href: "/", label: "Story" },
-  { href: "/play", label: "Bench" },
-  { href: "/notes", label: "Notes" },
-];
+import { SiteNav } from "@/components/site-nav";
 
 // HEADER row of IDENTITY.md: solid ground, border-b in LINE, sticky.
 export function SiteHeader() {
@@ -18,11 +12,7 @@ export function SiteHeader() {
           Guttora
         </Link>
         <nav aria-label="Main" className="flex items-center gap-1 sm:gap-2">
-          {NAV.map((item) => (
-            <Button key={item.href} asChild variant="ghost" size="sm">
-              <Link href={item.href}>{item.label}</Link>
-            </Button>
-          ))}
+          <SiteNav />
         </nav>
       </div>
     </header>

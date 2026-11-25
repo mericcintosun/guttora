@@ -17,7 +17,7 @@ const archivo = Archivo({
 });
 
 export const metadata: Metadata = {
-  title: "Guttora: count a dripping tap by ear",
+  title: { default: "Guttora: count a dripping tap by ear", template: "%s | Guttora" },
   description:
     "Hold your phone next to a dripping tap. Guttora counts the drops by sound, measures drop size with a teaspoon, and shows how many litres of water and kilograms of CO2e that tap wastes in a year.",
 };
