@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AccuracyBench } from "@/components/accuracy-bench";
+import { SceneSlot } from "@/components/scene-slot";
 import { Card, CardContent } from "@/components/ui/card";
 import { getAdapter } from "@/lib/adapter";
 import { BENCH_TOLERANCE_DROPS } from "@/lib/config";
@@ -13,6 +14,9 @@ export const metadata: Metadata = {
 };
 
 const hopMs = Math.round((DEFAULT_CONFIG.hop / 44100) * 1000 * 10) / 10;
+
+// One-line folds for the dense parts of the appendix.
+const foldClass = "rounded-sm border-2 border-border bg-card p-4 shadow-hard-sm";
 
 export default async function NotesPage() {
   const adapter = getAdapter();
@@ -33,7 +37,18 @@ export default async function NotesPage() {
 
       <section className="space-y-4">
         <h2 className="text-3xl">How a drop is heard</h2>
-        <ol className="list-decimal space-y-3 pl-5">
+        <p>
+          Guttora listens above {DEFAULT_CONFIG.minHz} Hz and counts a drop each time the sound there jumps clear of the
+          room&rsquo;s own level.
+        </p>
+        <figure>
+          <div className="rounded-sm border-2 border-border bg-card shadow-hard">
+            <SceneSlot n={6} alt="A waveform drawn in ink with tall spikes at each drop and blue tick marks above the counted ones" width={1200} height={480} />
+          </div>
+        </figure>
+        <details className={foldClass}>
+          <summary className="cursor-pointer font-bold">Read the seven steps from microphone to count</summary>
+        <ol className="mt-3 list-decimal space-y-3 pl-5">
           <li>
             The microphone opens with echo cancellation, noise suppression and automatic gain turned off. Those filters are
             built for voices and treat a drip as noise to remove.
@@ -59,27 +74,32 @@ export default async function NotesPage() {
             typical gaps), the answer is &ldquo;no regular drip, 0 L&rdquo;.
           </li>
         </ol>
+        </details>
       </section>
 
       <section className="space-y-4">
         <h2 className="text-3xl">From drops to litres, kWh and CO2e</h2>
+        <p>
+          The default drop is the USGS figure of {fmt(USGS_DROPS_PER_GALLON)} drops to a US gallon, so one drip a second comes to{" "}
+          {fmt(annualLitres(60, DEFAULT_ML_PER_DROP))} litres a year.
+        </p>
         <Card>
           <CardContent className="space-y-2 text-sm">
             <p>litres a year = drops per minute &times; 525,600 minutes &times; mL per drop / 1000</p>
             <p>mL per drop = spoon volume / drops to fill it, or {fmt(DEFAULT_ML_PER_DROP, 2)} mL without a spoon</p>
             <p>kWh = litres &times; 4.186 kJ/kg K &times; temperature rise / 3600 / heater efficiency</p>
+            <p>
+              heater efficiency = {heaters.electric.efficiency * 100}% for an electric boiler, {heaters.gas.efficiency * 100}% for a
+              gas boiler
+            </p>
             <p>kg CO2e = kWh &times; grid factor (electric) or &times; {heaters.gas.fuelKgPerKwh} (natural gas)</p>
           </CardContent>
         </Card>
-        <p>
-          The default drop comes from the USGS drip calculator: {fmt(USGS_DROPS_PER_GALLON)} drops to a US gallon. At that size, one
-          drip a minute is {fmt(annualLitres(1, DEFAULT_ML_PER_DROP))} litres a year and one drip a second is{" "}
-          {fmt(annualLitres(60, DEFAULT_ML_PER_DROP))} litres. Electric heaters are taken as {heaters.electric.efficiency * 100}%
-          efficient and gas boilers as {heaters.gas.efficiency * 100}%.
-        </p>
-        <div className="overflow-x-auto rounded-sm border-2 border-border bg-card shadow-hard">
+        <details className={foldClass}>
+          <summary className="cursor-pointer font-bold">Show the grid factor table ({gridFactors.length} countries)</summary>
+        <div className="mt-3 overflow-x-auto border-2 border-border bg-card">
           <table className="w-full text-left text-sm">
-            <caption className="border-b-2 border-border bg-secondary px-4 py-2 text-left font-bold">
+            <caption className="border-b-2 border-border px-4 py-2 text-left font-bold">
               Grid factors used for electric water heating (approximate 2023 averages)
             </caption>
             <thead className="border-b-2 border-border">
@@ -98,14 +118,14 @@ export default async function NotesPage() {
             </tbody>
           </table>
         </div>
+        </details>
       </section>
 
       <section className="space-y-4">
         <h2 className="text-3xl">Does the counter count right?</h2>
         <p>
-          The bench builds six recordings from scratch, each with a drop count we know, and runs the detector on them. Synthetic
-          clips test the logic, not a real bathroom; counts from our own recorded taps are listed in the README as we collect
-          them.
+          Six synthetic recordings with a known drop count go through the same detector the phone uses, which tests the logic,
+          not a real bathroom.
         </p>
         <AccuracyBench clips={benchClips} report={benchReport} tolerance={BENCH_TOLERANCE_DROPS} />
       </section>

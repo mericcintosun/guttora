@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { EmptyState } from "@/components/route-states";
+import { SceneSlot } from "@/components/scene-slot";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
 import { fmt, tapImpact } from "@/lib/impact";
 import { rankOpenTaps, repairRequestText } from "@/lib/repair-store";
 import type { Tap } from "@/lib/types";
@@ -63,8 +65,13 @@ export function RepairList({ list, gridCode, residenceName, onChange, onReset, h
         {ranked.length === 0 ? (
           <div className="p-5">
             <EmptyState
-              title="No open taps on the list."
+              title="No open taps on the list yet."
               body="Measure a tap with the counter above and add it here, or bring back the ten sample taps."
+              media={
+                <div className="mx-auto max-w-xs rounded-sm border-2 border-border bg-card shadow-hard">
+                  <SceneSlot n={5} alt="An empty clipboard repair list with one blue pencil, waiting for the first tap" width={640} height={640} />
+                </div>
+              }
               action={
                 <>
                   <Button onClick={onReset}>Restore the sample list</Button>
@@ -150,13 +157,7 @@ export function RepairList({ list, gridCode, residenceName, onChange, onReset, h
         {manualText !== null ? (
           <label className="block w-full text-sm font-bold">
             Copy this text by hand.
-            <textarea
-              readOnly
-              value={manualText}
-              rows={8}
-              onFocus={(e) => e.currentTarget.select()}
-              className="mt-1 block w-full rounded-sm border-2 border-input bg-card px-3 py-2 text-sm font-normal text-foreground shadow-hard-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            />
+            <Textarea readOnly value={manualText} rows={8} onFocus={(e) => e.currentTarget.select()} className="mt-1 font-normal" />
           </label>
         ) : null}
       </CardFooter>

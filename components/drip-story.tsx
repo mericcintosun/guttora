@@ -151,7 +151,7 @@ function Readout({ story, p, onJump }: { story: Story; p: number; onJump: (i: nu
               variant={i === active ? "default" : "outline"}
               aria-current={i === active ? "step" : undefined}
               onClick={() => onJump(i)}
-              className="h-7 px-2 shadow-hard-sm"
+              className="h-11 px-3 shadow-hard-sm"
             >
               {c.word}
             </Button>

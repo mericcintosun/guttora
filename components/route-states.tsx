@@ -51,12 +51,24 @@ export function ErrorState({
   );
 }
 
-export function EmptyState({ title, body, action }: { title: string; body: string; action: ReactNode }) {
+export function EmptyState({
+  title,
+  body,
+  action,
+  media,
+}: {
+  title: string;
+  body: string;
+  action: ReactNode;
+  /** Optional picture shown above the actions, such as a scene slot. */
+  media?: ReactNode;
+}) {
   return (
     <Card>
       <CardContent className="space-y-3">
         <p className="font-bold">{title}</p>
         <p className="text-sm leading-relaxed">{body}</p>
+        {media}
         <div className="flex flex-wrap gap-2">{action}</div>
       </CardContent>
     </Card>

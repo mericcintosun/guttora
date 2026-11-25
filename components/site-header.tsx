@@ -19,28 +19,31 @@ export function SiteHeader() {
   );
 }
 
+// Underlined text links, at least 44px tall for touch.
+const footerLink = "inline-flex min-h-11 items-center font-bold underline decoration-2 underline-offset-4";
+
 export function SiteFooter() {
   return (
     <footer className="mt-24 border-t-2 border-border bg-secondary">
-      <div className="mx-auto flex max-w-5xl flex-col gap-2 px-4 py-8 text-sm sm:flex-row sm:items-center sm:justify-between">
-        <p>
-          Guttora counts drips by ear, in your browser. Audio never leaves the device.
-        </p>
-        <p>
-          Built for Green Shift Hacks 2026.{" "}
-          <Link href="/notes" className="font-bold underline decoration-2 underline-offset-4">
-            Method and sources
-          </Link>
-          {" · "}
-          <a
-            href="https://github.com/mericcintosun/guttora"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-bold underline decoration-2 underline-offset-4"
-          >
-            Source code
-          </a>
-        </p>
+      <div className="mx-auto max-w-5xl space-y-3 px-4 py-8 text-sm">
+        <p>Guttora counts drips by ear in your browser, and the audio never leaves the device.</p>
+        <ul className="flex flex-wrap gap-x-6">
+          <li>
+            <Link href="/notes" className={footerLink}>
+              Method and sources
+            </Link>
+          </li>
+          <li>
+            <a href="https://github.com/mericcintosun/guttora" target="_blank" rel="noopener noreferrer" className={footerLink}>
+              Source code
+            </a>
+          </li>
+          <li>
+            <a href="https://green-shift-hacks.devpost.com/" target="_blank" rel="noopener noreferrer" className={footerLink}>
+              Green Shift Hacks
+            </a>
+          </li>
+        </ul>
       </div>
     </footer>
   );
