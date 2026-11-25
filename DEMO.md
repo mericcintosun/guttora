@@ -14,7 +14,7 @@ Before each take: open `/play?reset=1`.
 
 ## Steps
 
-1. `/` (`app/page.tsx`, `components/drip-story.tsx`): read the five chapters following seed tap C-214 as the pinned scene plays.
+1. `/` (`app/page.tsx`, `components/story-intro.tsx`, `components/inline-count.tsx`, `components/drip-story.tsx`): the headline words wipe in one by one and the phone-by-the-basin frame follows. Scroll: the sentence "one drip a second is about 7,885 litres a year" (computed by `annualLitres(60, DEFAULT_ML_PER_DROP)`) counts its oversized figure up from 0. Then read the five chapters following seed tap C-214 as the pinned scene plays.
 2. `/play` (`app/play/page.tsx`, `components/drip-listener.tsx`): press "Start listening". The counter ticks per drop, then the rate and the regularity badge appear. Fallback: upload a recording.
 3. `/play` (`components/impact-figure.tsx`): keep the counter running. Each counted drop flashes the blue mark, and the litres a year figure and its bar climb together as the rate settles.
 4. `/play` (`components/play-workbench.tsx`): press "Start spoon", then "Spoon is full". The measured mL per drop replaces the USGS default, and the figure and bar tween to the measured drop size.

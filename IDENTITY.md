@@ -83,3 +83,8 @@ Rules:
 - every interaction is driven by the real seed data; a decorative animation with no product meaning does not count as a signature
 
 ## Amendments (append-only; later phases add dated lines here, never edit anything above)
+
+2026-11-25: Kit signature 2 is built in `components/story-intro.tsx`: the home h1 is hand-split into `guttora-word` spans that wipe in with a 0.06 s stagger, then the scene-1 frame wipes in top to bottom, all inside `useGSAP` with `gsap.matchMedia()` and no tween under reduced motion.
+2026-11-25: The M4 curve in GSAP code is `power2.inOut`, the cubic in-out polynomial that `cubic-bezier(0.65, 0, 0.35, 1)` approximates; the CSS `guttora-wipe` keyframe keeps the exact bezier. GSAP clears the clip-path when a wipe ends so hard shadows are never cut.
+2026-11-25: Scene map: 1 on `/` in the intro (960x640), 2 on `/` beside the spoon (720x720), 3 on `/` beside who it is for (960x640), 4 on `/play` under the header (1200x400), 5 in the empty repair list (640x640), 6 on `/notes` beside how a drop is heard (1200x480).
+2026-11-25: On `/notes` the grid factor table and the seven detector steps fold behind one-line `<details>` summaries; the accuracy bench stays open.

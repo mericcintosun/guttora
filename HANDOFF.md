@@ -1,5 +1,62 @@
 # HANDOFF: Guttora
 
+## Phase 5 result
+
+**Goal:** stage DEMO step 1 in full: the headline words wipe in on first paint (kit signature 2), the scene-1 frame follows, an oversized litres figure counts up inside its sentence, then the pinned C-214 scene plays. Around it, trim `/` to one L3 column with one story CTA, fix the shell (footer links, 44px chapter buttons, folded notes table), place six scene slots, and write the submission package (README truth pass, LICENSE, SUBMISSION.md).
+
+**Status (per slice):**
+- A1, editorial front page: done. `components/story-intro.tsx` (new, `"use client"`) renders kicker, hand-split h1 (`guttora-word inline-block` spans), a one-sentence standfirst and the scene-1 figure as children. `app/page.tsx` has one primary CTA (`#story`) mid-flow, `/play` as an inline underlined link in the next sentence, one sentence per section, the accent band and the limitations `<details>`. One column at `max-w-prose`, no grid.
+- A2, shell: done. Footer is one sentence plus three underlined links (`/notes`, repo, Devpost; both external with `target="_blank" rel="noopener noreferrer"`, all `min-h-11`). Chapter buttons are `h-11 px-3` inside the existing `flex flex-wrap` (`components/drip-story.tsx:154`; the `useGSAP` block is untouched). `/notes`: grid table and the seven detector steps fold behind one-line `<details>`; each section leads with one sentence; the accuracy bench stays open. `/play`: h1, one sentence and the Live badge sentence. Route states: the only raw control was the manual copy `<textarea>` in `components/repair-list.tsx`; it now uses the new `components/ui/textarea.tsx` primitive.
+- B1, motion: done. Signature 2 in `StoryIntro` (one timeline: words, then frame). `components/inline-count.tsx` counts the litres figure from 0 once on scroll (ScrollTrigger `once: true`). `components/editorial-rule.tsx` wipes an `hr` in before the band, "Why the spoon matters" and "Who it is for". `app/globals.css` unchanged: one `@keyframes guttora-wipe` and its reduced-motion block.
+- B2, scene family: done. Six `<SceneSlot n=` placements, `public/illustrations/scene-4.svg`, `scene-5.svg`, `scene-6.svg` written (token hexes only, no comments, no gradients).
+- C1, submission package: done. README rewritten in the required order (prize table row and both PROOF blocks byte-identical), `LICENSE` (MIT, "Guttora contributors"), `SUBMISSION.md`. `docs/SCREENSHOTS.md` skipped (optional).
+- C2, docs sync: done. Four `2026-11-25:` lines appended to IDENTITY.md Amendments, DEMO step 1 updated. DELIVERY.md unchanged (it keeps the video line for the human).
+
+**Decisions:**
+- No live deployment yet, so the diagnosis was made from the files only (SHOT names the source file, regions are line ranges). Publish first so the next diagnosis has pixels.
+- M4 ease in GSAP code is `"power2.inOut"`: GSAP's power2 is the cubic curve, and `cubic-bezier(0.65, 0, 0.35, 1)` is the usual bezier fit of the cubic in-out, so no CustomEase plugin (a second dependency) is needed.
+- The wipes use `fromTo` to `inset(0 0% 0 0)` with `clearProps: "clipPath"` instead of a bare `gsap.from`, so the final state has no clip at all and the hard shadow on the scene-1 frame is never cut.
+- Server HTML renders every word, the frame, the rules and the final litres value at full visibility. On the client, with motion allowed, there is one brief frame where the words show before GSAP clips them for the wipe (hydration runs after first paint). This is the cost of never server-rendering hidden content.
+- `InlineCount` writes "0" as soon as it mounts with motion allowed, then counts up when 85% of the viewport reaches it, so the reader never sees it jump back from the final value.
+- `EditorialRule` is placed before the page-level h2s on `/`. The five chapter h2s inside `components/drip-story.tsx` have none, because that file was fenced to line 154.
+- Slot map: 1 `/` intro 960x640; 2 `/` spoon 720x720; 3 `/` who it is for 960x640; 4 `/play` under the header 1200x400; 5 the empty repair list (`components/repair-list.tsx`, through a new optional `media` prop on `EmptyState`) 640x640; 6 `/notes` how a drop is heard 1200x480.
+- `/play` no longer says which mode counts the notes bench (the "counted on the server / in your browser" sentence was in the cut paragraph). The notes page bench still names its own source.
+- `scripts/proof.ts` already lists `SUBMISSION.md` in `TARGETS`, so no code change was needed. `SUBMISSION.md` carries the `detector-bench` block only; for `unit-tests` the script will print "markers missing in SUBMISSION.md, skipped", which is expected.
+- SUBMISSION.md follows Devpost's standard project fields; the actual submission form was not seen.
+- The README no longer lists lucide-react: it is in `package.json` but nothing in `app/`, `components/` or `lib/` imports it.
+
+**Failed attempts:** none.
+
+**Files changed:** `components/story-intro.tsx` (new), `components/inline-count.tsx` (new), `components/editorial-rule.tsx` (new), `components/ui/textarea.tsx` (new), `app/page.tsx`, `app/play/page.tsx`, `app/notes/page.tsx`, `components/site-header.tsx` (footer only), `components/drip-story.tsx` (line 154 only), `components/route-states.tsx`, `components/repair-list.tsx`, `public/illustrations/scene-4.svg` (new), `scene-5.svg` (new), `scene-6.svg` (new), `README.md`, `LICENSE` (new), `SUBMISSION.md` (new), `IDENTITY.md` (append only), `DEMO.md`, `HANDOFF.md`, `.farm-commits.json`, `.farm-delta.md` (not committed).
+
+**Commands run:** none, the agent has no shell. `npm install`, `npm run build`, `npm test`, `npm run proof`, Lighthouse and every visual check at 360, 768 and 1280px are unverified.
+
+**Gate notes (read from files):**
+- Kit: signature 1 `components/drip-story.tsx`, signature 2 `components/story-intro.tsx`, signature 3 `components/impact-figure.tsx`. Each starts with `"use client"`, imports `gsap` and `useGSAP`, and uses `gsap.matchMedia()` with a reduced-motion branch. `inline-count.tsx` and `editorial-rule.tsx` follow the same rules.
+- Tripwire counts are in `.farm-delta.md`: zero for every banned hex, keyframe and prop; raw hexes only in `app/globals.css` and `app/icon.svg`.
+- `.gitignore` covers `.env*` with `!.env.example`; `.env.example` lists both `process.env` reads (`ADAPTER_MODE`, `NEXT_PUBLIC_BRAND_FILES`); `.farm-live.json` unchanged.
+- Commit replay note: each file sits in one commit, so the first commit (`app/page.tsx`) imports files added by the third. Only the final tree is expected to build.
+
+**Scene fallbacks:** scenes 1 to 6 all render the SVG fallbacks in `public/illustrations/` until `public/brand/scene-1.png` to `scene-6.png` are uploaded.
+
+**Open questions:**
+- The short visible-then-clipped flash on the headline at hydration: acceptable, or should the server render the words under a no-JS-safe class that a tiny inline script removes? That would add an inline script, so it is a question, not a change.
+- The notes header standfirst still runs two sentences; trim it in Phase 6 if the judges read it as a wall.
+
+**Manual submit checklist (human):**
+- [ ] Team members added on Devpost.
+- [ ] Student eligibility confirmed for every member.
+- [ ] Video link pasted into the form by the builder.
+- [ ] Field recordings table recorded, hand-counted and added (README and notes page).
+- [ ] Submission form fields checked against `SUBMISSION.md` (the form itself was not seen).
+- [ ] Submitted before 10 December 2026, 17:00 EST.
+
+**Next best step:** Phase 6, the judge round fixes. Publish the redeploy first, take 360, 768 and 1280px shots of `/`, `/play` and `/notes`, and check the headline wipe, the count-up and the six scene frames on a phone.
+
+**Closing commit:** `faz-5: editorial front page, scene family and submission package`
+
+---
+
 ## Phase 4 result
 
 **Goal:** the second wow on `/play` (kit signature 3: the litres figure and its bar tween together, and the drop mark flashes per counted drop), every route usable at 360px, OG and Twitter metadata, the prize track table and `DELIVERY.md`, landing links, then the security pass (microphone, web hygiene, `SECURITY.md`).
