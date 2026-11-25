@@ -1,5 +1,70 @@
 # HANDOFF: Guttora
 
+## Phase 4 result
+
+**Goal:** the second wow on `/play` (kit signature 3: the litres figure and its bar tween together, and the drop mark flashes per counted drop), every route usable at 360px, OG and Twitter metadata, the prize track table and `DELIVERY.md`, landing links, then the security pass (microphone, web hygiene, `SECURITY.md`).
+
+**Status (per slice):**
+- A1, impact figure: done. `components/impact-figure.tsx` (new). It has two `useGSAP` hooks scoped to `rootRef`, each building a `gsap.matchMedia()` with a `(prefers-reduced-motion: no-preference)` branch (tween) and a `(prefers-reduced-motion: reduce)` branch (`gsap.set` to the final values, no flash). It has the loading, empty, error and zero microcopy. React renders the final `fmt(litres)` and the final `scaleX`, so server HTML is true. It is wired into the "Yearly impact" card in `components/play-workbench.tsx`; the bare "Start the counter..." line is gone. DEMO.md now runs steps 1 to 8.
+- A2, responsive shell: done. `SiteNav` takes `layout?: "inline" | "bar"`. The header nav is `hidden md:flex`. A fixed bottom `nav aria-label="Main, mobile"` with `md:hidden` sits in `app/layout.tsx`, and `<body>` has `pb-16 md:pb-0`. Buttons `default`/`sm`/`icon` and `Input` are `h-11`. The listener file input is `h-11 py-1.5` and its name line is `min-w-0 truncate` with `title`. Repair rows use `break-words`, `title={r.tap.label}` and `flex shrink-0 flex-wrap gap-2`.
+- A3, metadata: done (`app/layout.tsx`). `app/opengraph-image.tsx` and `app/icon.svg` are untouched and exist.
+- A4, prize table and DELIVERY.md: done. README `## Prize track` and a `Source:` line under the live demo, so SECURITY.md URLs match README byte for byte.
+- A5, landing: done. The standfirst names students, tenants and residence staff. The CTA row has `#story` and `/play` buttons; `id="story" className="scroll-mt-24"` is on the wrapper in `app/page.tsx`.
+- B1, sec(web): done. The headers are in `next.config.ts` (brand file code unchanged), and the footer "Source code" link has `rel="noopener noreferrer"`.
+- B2, SECURITY.md: done.
+
+**Decisions:**
+- **Second wow selection record:** all five idea features already ship in some form (drip counter, spoon calibration, impact converter, repair list, file mode with the synthetic bench). The real field table needs team recordings that only the human can make. So the most demo-visible unbuilt piece was Mission item 2, the wow polish with kit signature 3. It needs no new provider and no new seat.
+- **No sponsor integration:** the only `targetTracks` entry is the Green Shift Grand Prize, `kind: "main-placement"`, `requiredTech: []`, `entryMode: "automatic"`. No env key was added; `.farm-live.json` and `.env.example` are unchanged.
+- **Contract front skipped: no `contracts/` directory** (Glob `contracts/**` returns no files). **Wallet front: vacuous, no wallet code** (the wallet grep only hits Web Audio `connect(`/`disconnect(` in `components/drip-listener.tsx:57,99,100,101`).
+- Each figure update reverts the previous run's `matchMedia` before it builds a new one, so media listeners do not pile up per drop. The on-screen value is snapshotted first, so the new tween continues from where the old one stopped.
+- Branch order in the figure: error (`irregular` or a non-finite litres) beats loading (`warming`), which beats empty (`litres === null` or `idle`), which beats zero (`quiet` or `litres === 0`). So while the live counter warms up, a typed rate shows in the detail sentence below the figure, not in the figure.
+- The landing CTA row carries no `guttora-wipe` class: the wipe keeps `clip-path: inset(0 0 0 0)` as its final state, which would cut off the buttons' hard shadows. The two buttons override `whitespace-nowrap` (`whitespace-normal h-auto min-h-12`) so the long label wraps at 360px.
+
+**Responsive audit (before the fixes):**
+- `app/notes/page.tsx`: the grid table already sits in `overflow-x-auto` (line 80). No fixed widths. Long strings: the source link texts wrap normally.
+- `app/play/page.tsx` and the workbench: no fixed widths over 360px (`max-w-40` inputs only). Tap targets under 44px: every `size="sm"` button (spoon size, heater, grid, repair row actions, header nav) was 32px, default buttons and inputs 40px, and the file input 40px. Long strings: the repair tap label and place had no wrap, the row's button group could not wrap, and the uploaded file name could push the counter row. The accuracy bench table sits in `overflow-x-auto` (`components/accuracy-bench.tsx:156`).
+- `app/page.tsx`: the h1 is `text-4xl` under sm (wraps). No fixed widths. Story chapter buttons are `h-7` (28px) by a className override at `components/drip-story.tsx:154`. **Left as is:** `drip-story.tsx` was not in this phase's file list, and the line sits next to the fenced GSAP block. Open question below.
+- Error and not-found pages: `app/error.tsx`, `app/play/error.tsx`, `app/notes/error.tsx`, `app/not-found.tsx` render no `<html>` (the only `<html` is `app/layout.tsx:36`), so the header and the bottom bar stay.
+- Grep `w-\[[4-9][0-9]{2}px\]|w-\[[0-9]{4}` over `app/` and `components/`: zero hits.
+
+**Security pass (greps, read from files):**
+- `getUserMedia`: the call is at `components/drip-listener.tsx:79` inside `start()` (defined at line 70, feature check at line 72). `start` is only referenced by the "Start listening" `onClick` (line 219). The only `useEffect` in the file (line 65) returns `teardown`; it calls neither `start` nor `getUserMedia`. The other hit is prose on `app/notes/page.tsx:127`.
+- Secrets `sk-|PRIVATE_KEY|[0-9a-fA-F]{64}` over `app/`, `components/`, `lib/`: zero hits. `process.env` reads: `NEXT_PUBLIC_BRAND_FILES` (`lib/brand-files.ts:2`, public build-time list of image names) and `ADAPTER_MODE` (`lib/config.ts:11`, server only). Both are in `.env.example`.
+- `http://` over `app/`, `components/`, `lib/`: one hit, the SVG `xmlns` namespace in `app/icon.svg:1`. It is an identifier, not a request (never-touch file).
+- `target="_blank"`: one hit, the new footer link in `components/site-header.tsx`, with `rel="noopener noreferrer"`.
+- `<form`: zero hits. Inputs feed local React state only; the clipboard write in `components/repair-list.tsx` runs only from the "Copy repair request" click.
+- `console.log`: hits only in `lib/adapter.ts` and `lib/adapter-real.ts` (server side, `[core]` prefix, intentional). None in `components/`.
+- Tripwires over `app/` and `components/`: banned hexes, `fade-up|float-y|glow-pulse|caret-blink|pulse-dot|--delay|--d:|backdrop-blur` and raw `#hex` in `.tsx` all give zero hits. The only `@keyframes` is `guttora-wipe`; the only `<BrandMark` is `components/site-header.tsx:11`. Em dash, en dash, ` -- ` and the banned words give zero hits in README, DEMO, DELIVERY, SECURITY and UI `.tsx`.
+
+**Cuts:** none. Every Part A and Part B item shipped.
+
+**Failed attempts:** none.
+
+**Files changed:** `components/impact-figure.tsx` (new), `components/play-workbench.tsx`, `DEMO.md`, `components/site-nav.tsx`, `components/site-header.tsx`, `app/layout.tsx`, `components/ui/button.tsx`, `components/ui/input.tsx`, `components/repair-list.tsx`, `components/drip-listener.tsx` (two className edits only), `app/page.tsx`, `README.md`, `DELIVERY.md` (new), `next.config.ts`, `SECURITY.md` (new), `HANDOFF.md`, `.farm-commits.json`.
+
+**Commands run:** none, the agent has no shell. `npm install`, `npm run build`, `npm test`, Lighthouse, the header check and every visual check at 360, 768 and 1280px are unverified.
+
+**Open questions:**
+- The story chapter buttons are `h-7` (`components/drip-story.tsx:154`), under 44px. Should Phase 5 lift them to `h-11`? That line is outside the GSAP block, but the readout gets taller in the pinned scene.
+- The footer "Source code" link is external and appears on `/` too, while the landing rule says every href on `/` resolves to `/`, `/play`, `/notes` or `#story`. Slice B1 asked for the link, so it stays; the landing article itself has only internal hrefs.
+- The `h-11` sm buttons make the `/play` grid factor row (7 countries) and the repair row actions taller. They wrap correctly; check that it still reads well at 360px.
+
+**Manual checklist (human):**
+- [ ] Field-test DEMO step 3 on a real tap: the mark flashes on every counted drop, and the litres figure and its bar climb together as the rate settles. With reduced motion on, the values appear without tweens.
+- [ ] Record the six field recordings, hand-count them and add their table (README and notes page).
+- [ ] Team names and the video on Devpost before 10 December 2026, 17:00 EST (see `DELIVERY.md`).
+- [ ] Devtools at 360px, 768px and 1280px: no horizontal scroll, and the bottom bar works below 768px.
+- [ ] View-source on `/`: absolute `og:image`, `twitter:card` is `summary_large_image`; the response headers include `Permissions-Policy` with `microphone=(self)`.
+
+**Blockaid:** no wallet, so no warning is expected.
+
+**Next best step:** Phase 5, the frontend pass with kit signature 2 (intro word timeline on `/`).
+
+**Closing commit:** `faz-4: second wow on the bench, phone-ready shell, metadata and security notes`
+
+---
+
 ## Phase 3 result
 
 **Goal:** the whole demo path runs on the real flow and repeats cleanly. Every DEMO step has a real path and a fallback, the repair list has one versioned store with a double click guard, every route has loading, error and empty branches, and `npm run demo:reset` plus `/play?reset=1` put the demo back at its start state.
