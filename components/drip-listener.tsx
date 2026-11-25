@@ -175,7 +175,7 @@ export function DripListener({ onStats }: { onStats: (s: DripStats | null) => vo
             {stats?.count ?? 0}
             <span className="ml-2 font-sans text-base font-bold">drops</span>
           </p>
-          <p className="text-sm tabular-nums">
+          <p className="min-w-0 truncate text-sm tabular-nums" title={fileName ?? undefined}>
             {mode === "live" ? `listening ${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, "0")}` : fileName ? fileName : ""}
           </p>
         </div>
@@ -225,7 +225,7 @@ export function DripListener({ onStats }: { onStats: (s: DripStats | null) => vo
             <Input
               type="file"
               accept="audio/*"
-              className="h-10 py-1.5"
+              className="h-11 py-1.5"
               disabled={mode === "decoding"}
               onChange={(e) => {
                 const f = e.target.files?.[0];

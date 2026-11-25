@@ -17,10 +17,11 @@ const buttonVariants = cva(
         link: "border-transparent bg-transparent px-0 text-primary underline decoration-2 underline-offset-4 shadow-none active:shadow-none",
       },
       size: {
-        default: "h-10 px-4 py-2",
-        sm: "h-8 px-3 text-xs",
+        // Every size is at least 44px tall, the minimum comfortable touch target.
+        default: "h-11 px-4 py-2",
+        sm: "h-11 px-3 text-xs",
         lg: "h-12 px-7 text-base",
-        icon: "h-10 w-10",
+        icon: "h-11 w-11",
       },
     },
     defaultVariants: { variant: "default", size: "default" },

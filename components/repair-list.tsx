@@ -85,19 +85,19 @@ export function RepairList({ list, gridCode, residenceName, onChange, onReset, h
                 }`}
               >
                 <div className="min-w-0">
-                  <p className="font-bold">
+                  <p className="break-words font-bold" title={r.tap.label}>
                     {i + 1}. {r.tap.label}{" "}
                     <Badge variant={r.tap.status === "reported" ? "secondary" : "outline"} className="ml-1 align-middle">
                       {r.tap.status}
                     </Badge>
                   </p>
-                  <p className="text-sm">
+                  <p className="break-words text-sm">
                     {r.tap.place}. {r.tap.dripsPerMinute} drops a minute, {fmt(r.litres)} L a year
                     {r.kwh > 0 ? `, ${fmt(r.kwh)} kWh, ${fmt(r.kgCo2e)} kg CO2e` : ""}.{" "}
                     {r.tap.spoonDrops ? `Drop measured with a spoon.` : "Default drop size."}
                   </p>
                 </div>
-                <div className="flex shrink-0 gap-2">
+                <div className="flex shrink-0 flex-wrap gap-2">
                   {r.tap.status === "dripping" ? (
                     <Button size="sm" variant="outline" onClick={() => update(r.tap.id, { status: "reported" })}>
                       Mark reported

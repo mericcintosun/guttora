@@ -11,7 +11,7 @@ export function SiteHeader() {
           <BrandMark />
           Guttora
         </Link>
-        <nav aria-label="Main" className="flex items-center gap-1 sm:gap-2">
+        <nav aria-label="Main" className="hidden items-center gap-2 md:flex">
           <SiteNav />
         </nav>
       </div>
@@ -31,6 +31,15 @@ export function SiteFooter() {
           <Link href="/notes" className="font-bold underline decoration-2 underline-offset-4">
             Method and sources
           </Link>
+          {" · "}
+          <a
+            href="https://github.com/mericcintosun/guttora"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-bold underline decoration-2 underline-offset-4"
+          >
+            Source code
+          </a>
         </p>
       </div>
     </footer>
