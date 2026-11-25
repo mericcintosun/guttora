@@ -1,5 +1,10 @@
 # HANDOFF: Guttora
 
+## QA round 1
+
+- Finding `data` on /play ("the live source fell back to bundled data"). Root cause: no upstream call failed. The repair list is seeded from `lib/data/seed.ts` by design (`lib/adapter-real.ts` returns the seed residence, there is no shared building register to read), and the page header put that sample sentence right beside the green "Live" badge, so the live microphone path and the sample list read as one source that had fallen back. Fix: the header now carries only the live microphone sentence (`app/play/page.tsx`); the sample note moved into the repair list card (`components/repair-list.tsx`) and follows the list's real state (`showsSample` from `components/play-workbench.tsx`): it says sample taps are shown and why while any seed tap remains, and says the list is the reader's own once they have replaced them. A fresh browser still sees the sample note, which is correct: the list is sample data until a tap is measured.
+- Finding `proof` ("9 passed, 0 failed"): informational, nothing failed.
+
 ## Phase 5 result
 
 **Goal:** stage DEMO step 1 in full: the headline words wipe in on first paint (kit signature 2), the scene-1 frame follows, an oversized litres figure counts up inside its sentence, then the pinned C-214 scene plays. Around it, trim `/` to one L3 column with one story CTA, fix the shell (footer links, 44px chapter buttons, folded notes table), place six scene slots, and write the submission package (README truth pass, LICENSE, SUBMISSION.md).

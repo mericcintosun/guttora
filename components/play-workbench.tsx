@@ -43,6 +43,10 @@ export function PlayWorkbench({ residence, gridFactors, defaultGridCode, resetOn
   const [lastAdded, setLastAdded] = useState<string | null>(null);
   const [addedKey, setAddedKey] = useState<string | null>(null);
   const repair = useRepairList(taps, { resetOnLoad });
+  // The list is the worked example while any seed tap is still on it; once the reader
+  // has replaced them all, it is their own list and the sample note goes away.
+  const seedIds = new Set(taps.map((t) => t.id));
+  const showsSample = repair.list.some((t) => seedIds.has(t.id));
 
   // Which rate feeds the impact: the live detector when it has a verdict, else the typed rate.
   const typed = Number(manualRate.replace(",", "."));
@@ -262,6 +266,7 @@ export function PlayWorkbench({ residence, gridFactors, defaultGridCode, resetOn
             setLastAdded(null);
           }}
           residenceName={residence.residenceName}
+          showsSample={showsSample}
           highlightId={lastAdded}
         />
       )}

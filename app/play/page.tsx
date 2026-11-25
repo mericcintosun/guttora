@@ -33,8 +33,7 @@ export default async function PlayPage({
           <Badge variant="ok" className="mr-2 align-middle">
             Live
           </Badge>
-          The drip counter uses this phone&rsquo;s microphone, and the starting repair list is sample data for{" "}
-          {residence.residenceName}.
+          The drip counter listens through this phone&rsquo;s microphone, and the audio never leaves the device.
         </p>
       </header>
       <figure className="mb-8">

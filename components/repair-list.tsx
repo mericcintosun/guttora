@@ -18,9 +18,11 @@ interface RepairListProps {
   onChange: (next: Tap[]) => void;
   onReset: () => void;
   highlightId?: string | null;
+  /** True while at least one tap from the seed residence is still on the list. */
+  showsSample?: boolean;
 }
 
-export function RepairList({ list, gridCode, residenceName, onChange, onReset, highlightId }: RepairListProps) {
+export function RepairList({ list, gridCode, residenceName, onChange, onReset, highlightId, showsSample = false }: RepairListProps) {
   const [copied, setCopied] = useState<"idle" | "done" | "failed">("idle");
   const [copyPending, setCopyPending] = useState(false);
   const [manualText, setManualText] = useState<string | null>(null);
@@ -59,6 +61,11 @@ export function RepairList({ list, gridCode, residenceName, onChange, onReset, h
           {ranked.length} open taps lose about {fmt(openLitres)} litres a year
           {openCo2 > 0 ? ` and ${fmt(openCo2)} kg CO2e of water heating` : ""}. Fixed so far: {fixed.length}, saving{" "}
           {fmt(savedLitres)} litres a year.
+        </p>
+        <p className="text-xs leading-relaxed">
+          {showsSample
+            ? `Guttora keeps no shared building register, so the list opens with sample taps for ${residenceName} to show the ranking. Taps you measure join it, and the list is saved on this phone only.`
+            : "This list holds only taps you entered, saved on this phone only."}
         </p>
       </CardHeader>
       <CardContent className="p-0">
