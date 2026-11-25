@@ -23,8 +23,18 @@ export default async function Home() {
         <p className="guttora-wipe text-lg leading-relaxed sm:text-xl">
           Guttora is a browser tab that counts drips by ear. Put your phone next to the tap, let it listen for 30 seconds,
           catch a few drops in a teaspoon, and it tells you how many litres, kilowatt-hours and kilograms of CO2e that one tap
-          throws away in a year.
+          throws away in a year. It is built for students, tenants and residence staff who need a number before anyone fixes
+          a tap.
         </p>
+        {/* Mid-flow CTA row. No wipe class here: the wipe's final clip-path would cut off the hard shadows. */}
+        <div className="flex flex-col gap-3 pt-2 sm:flex-row">
+          <Button asChild size="lg" className="h-auto min-h-12 whitespace-normal py-3 text-center">
+            <a href="#story">Follow one tap from first drop to repair ticket</a>
+          </Button>
+          <Button asChild size="lg" variant="outline" className="h-auto min-h-12 whitespace-normal py-3 text-center">
+            <Link href="/play">Or open the bench on your phone</Link>
+          </Button>
+        </div>
       </header>
 
       <figure className="guttora-wipe my-10">
@@ -46,7 +56,7 @@ export default async function Home() {
         </p>
       </div>
 
-      <div className="mt-12">
+      <div id="story" className="mt-12 scroll-mt-24">
         <DripStory taps={taps} residenceName={residenceName} storyTapId={storyTapId} />
       </div>
 
