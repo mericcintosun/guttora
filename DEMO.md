@@ -18,6 +18,6 @@ Demo start route: /
 4. `/play` (`components/play-workbench.tsx`): switch the heater on. kWh and kg CO2e appear, using the selected grid factor.
 5. `/play` (`components/repair-list.tsx`): press "Add to repair list". The tap is ranked against the seed residence (Ayazağa Student Residence, served by `lib/adapter.ts`), then press "Copy repair request".
 6. `/play` (`components/drip-listener.tsx`): close the tap. The screen reads "No regular drip. Yearly loss: 0 L."
-7. `/notes` (`app/notes/page.tsx`, `components/accuracy-bench.tsx`): the synthetic accuracy bench table and the sources. It is labelled synthetic.
+7. `/notes` (`app/notes/page.tsx`, `components/accuracy-bench.tsx`): the synthetic accuracy bench table and the sources. It is labelled synthetic. With `ADAPTER_MODE=real` the table arrives filled from the server; in fake mode press Run the bench.
 
 The builder records the video from the live site by walking these steps in order.

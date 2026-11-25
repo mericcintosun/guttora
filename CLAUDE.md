@@ -7,11 +7,14 @@ Read `IDENTITY.md` (law for look, routes and motion), `HANDOFF.md` and `DEMO.md`
 - `npm run dev`
 - `npm run build` (must stay green after every change)
 - `npm run seed` (writes `fixtures/seed-snapshot.json` from `lib/data/seed.ts`, deterministic)
+- `npm test` (node:test over `tests/detector.test.ts`: five seed bench clips, determinism, query schema)
+- `npm run proof` (counts the six bench clips and runs the tests, then rewrites the PROOF blocks in README.md; always exits 0)
 
 ## Stack
 - Next.js 15 App Router, TypeScript strict, Tailwind v4 with no tailwind.config (tokens in `app/globals.css`).
 - GSAP via `@gsap/react` only (`useGSAP`), no second animation library.
-- Seed data reaches pages through `lib/adapter.ts` (`ADAPTER_MODE`, default fake).
+- Seed data reaches pages through `lib/adapter.ts` (`ADAPTER_MODE` read in `lib/config.ts`, default fake). In real mode `getBenchReport` counts the bench clips on the server.
+- zod 4 validates API input (`lib/schemas.ts`).
 
 ## Never touch
 - `lib/drip-detector.ts`, `lib/synth.ts`, the audio path in `components/drip-listener.tsx`, the math in `lib/impact.ts`.
@@ -21,7 +24,10 @@ Read `IDENTITY.md` (law for look, routes and motion), `HANDOFF.md` and `DEMO.md`
 
 ## Pitfalls
 - `@/lib/data` resolves to `lib/data.ts` (a re-export file) even though `lib/data/` exists.
-- `scripts/` is excluded from tsconfig; it runs under `node --experimental-strip-types`.
+- `scripts/` and `tests/` are excluded from tsconfig; they run under `node --experimental-strip-types` and import with explicit `.ts` paths.
+- Files that Node loads directly keep zero or type-only imports: `lib/config.ts` (zero imports), `lib/bench-score.ts` (type-only), `lib/schemas.ts` (zod only), plus `lib/drip-detector.ts`, `lib/synth.ts` and `lib/data/seed.ts`. Never add a runtime `@/` import to them.
+- `lib/adapter.ts` is the only file that imports `lib/adapter-real.ts` and the only place that branches on `ADAPTER_MODE`. No `"use client"` file imports `lib/config.ts` or `lib/adapter-real.ts`.
+- API failures return `{ ok: false, source, error, hint }` with a code from `lib/errors.ts`.
 - `app/opengraph-image.tsx` reads hexes from `lib/og-palette.ts` because Satori cannot read CSS variables.
 - Every GSAP call goes inside `useGSAP` plus `gsap.matchMedia()` with a reduced-motion path, and nothing is server-rendered at opacity 0.
 
