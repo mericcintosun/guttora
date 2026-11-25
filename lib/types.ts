@@ -1,6 +1,9 @@
 // Shared types for Guttora. Seed values live in lib/data/seed.ts; pages read them
 // through lib/adapter.ts.
 
+import type { DripState } from "./drip-detector";
+import type { CoreErrorCode } from "./errors";
+
 export type HeaterKind = "none" | "electric" | "gas";
 export type TapStatus = "dripping" | "reported" | "fixed";
 
@@ -55,6 +58,26 @@ export interface ResidenceSnapshot {
   taps: Tap[];
 }
 
+/** One bench clip and, when it was counted on the server, what the detector found. */
+export interface BenchRow {
+  id: string;
+  title: string;
+  conditions: string;
+  trueDrops: number | null;
+  counted: number | null;
+  state: DripState | null;
+  ms: number | null;
+  /** Within BENCH_TOLERANCE_DROPS of the truth with the right state (see lib/bench-score.ts). */
+  exact: boolean | null;
+}
+
+export interface BenchReport {
+  source: "fake" | "real";
+  /** ISO time of the server run, or null when nothing was counted. */
+  ranAt: string | null;
+  rows: BenchRow[];
+}
+
 export type ApiResponse<T> =
   | { ok: true; source: "fake" | "real"; data: T }
-  | { ok: false; source: "fake" | "real"; error: string };
+  | { ok: false; source: "fake" | "real"; error: CoreErrorCode; hint: string };
