@@ -1,31 +1,39 @@
 @import "tailwindcss";
 
-/* shadcn-style design tokens. The ONLY place colors live: restyle a project by
-   editing these variables from IDENTITY.md; components never carry hex.
-   TEMPLATE placeholder palette: warm neutral, deliberately NOT the navy ground +
-   teal accent the scaffold rules ban, so a token the scaffold forgets to
-   rewrite cannot reintroduce that look. Every value below is replaced. */
+/* Guttora design tokens. Every hex comes from IDENTITY.md (D10 butter).
+   Components never carry a raw hex; they use these variables through Tailwind. */
 :root {
-  --background: oklch(0.985 0.004 80);
-  --foreground: oklch(0.2 0.01 60);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.2 0.01 60);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.2 0.01 60);
-  --primary: oklch(0.45 0.12 40);
-  --primary-foreground: oklch(0.98 0.005 80);
-  --secondary: oklch(0.94 0.008 80);
-  --secondary-foreground: oklch(0.25 0.01 60);
-  --muted: oklch(0.94 0.008 80);
-  --muted-foreground: oklch(0.5 0.01 60);
-  --accent: oklch(0.92 0.02 60);
-  --accent-foreground: oklch(0.2 0.01 60);
-  --destructive: oklch(0.55 0.19 25);
-  --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(0.88 0.01 80);
-  --input: oklch(0.88 0.01 80);
-  --ring: oklch(0.45 0.12 40);
-  --radius: 0.375rem;
+  --ground: #ffd63d;
+  --surface: #fff3c4;
+  --deep: #f5c518;
+  --line: #141414;
+  --ink: #141414;
+  --royal: #1c4fd8;
+  --on-royal: #ffd63d;
+  --ok-color: #1f7a3d;
+  --warn-color: #8a5a00;
+  --bad-color: #b3261e;
+
+  --background: var(--ground);
+  --foreground: var(--ink);
+  --card: var(--surface);
+  --card-foreground: var(--ink);
+  --popover: var(--surface);
+  --popover-foreground: var(--ink);
+  --primary: var(--royal);
+  --primary-foreground: var(--on-royal);
+  --secondary: var(--deep);
+  --secondary-foreground: var(--ink);
+  --muted: var(--surface);
+  --muted-foreground: var(--ink);
+  --accent: var(--deep);
+  --accent-foreground: var(--ink);
+  --destructive: var(--bad-color);
+  --destructive-foreground: var(--surface);
+  --border: var(--line);
+  --input: var(--line);
+  --ring: var(--royal);
+  --radius: 0.125rem;
 }
 
 @theme inline {
@@ -48,13 +56,70 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+  --color-ok: var(--ok-color);
+  --color-warn: var(--warn-color);
+  --color-bad: var(--bad-color);
+
+  --radius-sm: var(--radius);
+  --radius-md: var(--radius);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-xl: var(--radius);
+
+  --shadow-hard: 4px 4px 0 0 var(--line);
+  --shadow-hard-sm: 2px 2px 0 0 var(--line);
+
+  --font-display: var(--font-archivo-black), "Arial Black", "Helvetica Neue", Arial, sans-serif;
+  --font-sans: var(--font-archivo), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
+  font-family: var(--font-archivo), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+h1,
+h2 {
+  font-family: var(--font-archivo-black), "Arial Black", "Helvetica Neue", Arial, sans-serif;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  line-height: 1.05;
+}
+
+::selection {
+  background: var(--royal);
+  color: var(--on-royal);
+}
+
+/* M4 wipe: clip-path inset reveal, 600ms, cubic-bezier(0.65, 0, 0.35, 1).
+   The element is fully visible in its final state; only the clip animates. */
+@keyframes guttora-wipe {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+.guttora-wipe {
+  animation: guttora-wipe 600ms cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+
+.guttora-wipe-group > :nth-child(2) {
+  animation-delay: 90ms;
+}
+.guttora-wipe-group > :nth-child(3) {
+  animation-delay: 180ms;
+}
+.guttora-wipe-group > :nth-child(4) {
+  animation-delay: 270ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .guttora-wipe,
+  .guttora-wipe-group > * {
+    animation: none;
+    clip-path: none;
+  }
 }
