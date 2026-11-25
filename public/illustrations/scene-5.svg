@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="640" height="640">
+  <rect width="640" height="640" fill="#ffd63d"/>
+  <rect x="172" y="112" width="320" height="440" fill="#141414"/>
+  <rect x="160" y="100" width="320" height="440" fill="#f5c518" stroke="#141414" stroke-width="3"/>
+  <rect x="190" y="150" width="260" height="360" fill="#fff3c4" stroke="#141414" stroke-width="3"/>
+  <rect x="268" y="88" width="120" height="44" fill="#141414"/>
+  <rect x="260" y="80" width="120" height="44" fill="#fff3c4" stroke="#141414" stroke-width="3"/>
+  <rect x="300" y="92" width="40" height="12" fill="#141414"/>
+  <path d="M320 166 C320 166 310 181 310 188 C310 194 314 198 320 198 C326 198 330 194 330 188 C330 181 320 166 320 166 Z" fill="none" stroke="#1c4fd8" stroke-width="3"/>
+  <rect x="212" y="222" width="24" height="24" fill="#fff3c4" stroke="#141414" stroke-width="2"/>
+  <rect x="252" y="232" width="170" height="3" fill="#141414"/>
+  <rect x="212" y="282" width="24" height="24" fill="#fff3c4" stroke="#141414" stroke-width="2"/>
+  <rect x="252" y="292" width="170" height="3" fill="#141414"/>
+  <rect x="212" y="342" width="24" height="24" fill="#fff3c4" stroke="#141414" stroke-width="2"/>
+  <rect x="252" y="352" width="170" height="3" fill="#141414"/>
+  <rect x="212" y="402" width="24" height="24" fill="#fff3c4" stroke="#141414" stroke-width="2"/>
+  <rect x="252" y="412" width="170" height="3" fill="#141414"/>
+  <g transform="rotate(-35 470 470)">
+    <rect x="396" y="464" width="180" height="28" fill="#141414"/>
+    <rect x="388" y="456" width="180" height="28" fill="#1c4fd8" stroke="#141414" stroke-width="3"/>
+    <polygon points="388,456 350,470 388,484" fill="#fff3c4" stroke="#141414" stroke-width="3"/>
+    <polygon points="363,465 350,470 363,475" fill="#141414"/>
+    <rect x="568" y="456" width="24" height="28" fill="#f5c518" stroke="#141414" stroke-width="3"/>
+  </g>
+</svg>
