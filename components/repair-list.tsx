@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { EmptyState } from "@/components/route-states";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,6 +20,8 @@ interface RepairListProps {
 
 export function RepairList({ list, gridCode, residenceName, onChange, onReset, highlightId }: RepairListProps) {
   const [copied, setCopied] = useState<"idle" | "done" | "failed">("idle");
+  const [copyPending, setCopyPending] = useState(false);
+  const [manualText, setManualText] = useState<string | null>(null);
   const ranked = rankOpenTaps(list, gridCode);
   const fixed = list.filter((t) => t.status === "fixed").map((tap) => ({ tap, ...tapImpact(tap, gridCode) }));
   const openLitres = ranked.reduce((a, r) => a + r.litres, 0);
@@ -28,14 +31,22 @@ export function RepairList({ list, gridCode, residenceName, onChange, onReset, h
   const update = (id: string, patch: Partial<Tap> | null) =>
     onChange(patch === null ? list.filter((t) => t.id !== id) : list.map((t) => (t.id === id ? { ...t, ...patch } : t)));
 
+  // copyPending follows the clipboard promise itself, so a second click while the
+  // browser is still writing does nothing.
   const copy = async () => {
+    if (copyPending) return;
+    const text = repairRequestText(list, gridCode, residenceName);
+    setCopyPending(true);
     try {
-      await navigator.clipboard.writeText(repairRequestText(list, gridCode, residenceName));
+      await navigator.clipboard.writeText(text);
       setCopied("done");
+      setManualText(null);
     } catch {
       setCopied("failed");
+      setManualText(text);
+    } finally {
+      setCopyPending(false);
     }
-    window.setTimeout(() => setCopied("idle"), 2500);
   };
 
   return (
@@ -50,7 +61,20 @@ export function RepairList({ list, gridCode, residenceName, onChange, onReset, h
       </CardHeader>
       <CardContent className="p-0">
         {ranked.length === 0 ? (
-          <p className="p-5 text-sm">No open taps. Measure one with the counter above and add it here.</p>
+          <div className="p-5">
+            <EmptyState
+              title="No open taps on the list."
+              body="Measure a tap with the counter above and add it here, or bring back the ten sample taps."
+              action={
+                <>
+                  <Button onClick={onReset}>Restore the sample list</Button>
+                  <Button asChild variant="outline">
+                    <a href="#listen">Start listening</a>
+                  </Button>
+                </>
+              }
+            />
+          </div>
         ) : (
           <ol>
             {ranked.map((r, i) => (
@@ -104,12 +128,37 @@ export function RepairList({ list, gridCode, residenceName, onChange, onReset, h
         ) : null}
       </CardContent>
       <CardFooter className="flex-wrap">
-        <Button onClick={copy} disabled={ranked.length === 0}>
-          {copied === "done" ? "Copied to clipboard" : copied === "failed" ? "Copy blocked by the browser" : "Copy repair request"}
+        <Button onClick={copy} disabled={ranked.length === 0 || copyPending}>
+          {copyPending
+            ? "Copying"
+            : copied === "done"
+              ? "Copied to clipboard"
+              : copied === "failed"
+                ? "Copy blocked by the browser"
+                : "Copy repair request"}
         </Button>
-        <Button variant="ghost" onClick={onReset}>
+        <Button
+          variant="ghost"
+          onClick={() => {
+            setCopied("idle");
+            setManualText(null);
+            onReset();
+          }}
+        >
           Reset to sample residence
         </Button>
+        {manualText !== null ? (
+          <label className="block w-full text-sm font-bold">
+            Copy this text by hand.
+            <textarea
+              readOnly
+              value={manualText}
+              rows={8}
+              onFocus={(e) => e.currentTarget.select()}
+              className="mt-1 block w-full rounded-sm border-2 border-input bg-card px-3 py-2 text-sm font-normal text-foreground shadow-hard-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            />
+          </label>
+        ) : null}
       </CardFooter>
     </Card>
   );

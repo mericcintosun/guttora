@@ -1,15 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { DripListener } from "@/components/drip-listener";
 import { RepairList } from "@/components/repair-list";
+import { RouteSkeleton } from "@/components/route-states";
+import { useRepairList } from "@/components/use-repair-list";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import type { DripStats } from "@/lib/drip-detector";
 import type { GridFactor, HeaterKind, ResidenceSnapshot, Tap } from "@/lib/types";
 import { computeImpact, DEFAULT_ML_PER_DROP, fmt, gridKgPerKwh, heaters, mlPerDropFromSpoon } from "@/lib/impact";
-import { loadRepairList, resetRepairList, saveRepairList } from "@/lib/repair-store";
 
 const HEATER_OPTIONS: Array<{ value: HeaterKind; label: string }> = [
   { value: "none", label: "Cold" },
@@ -22,9 +23,11 @@ export interface PlayWorkbenchProps {
   residence: ResidenceSnapshot;
   gridFactors: GridFactor[];
   defaultGridCode: string;
+  /** True when /play was opened with ?reset=1 (validated by playQuerySchema in the page). */
+  resetOnLoad: boolean;
 }
 
-export function PlayWorkbench({ residence, gridFactors, defaultGridCode }: PlayWorkbenchProps) {
+export function PlayWorkbench({ residence, gridFactors, defaultGridCode, resetOnLoad }: PlayWorkbenchProps) {
   const taps = residence.taps;
   const [stats, setStats] = useState<DripStats | null>(null);
   const [manualRate, setManualRate] = useState("");
@@ -36,19 +39,9 @@ export function PlayWorkbench({ residence, gridFactors, defaultGridCode }: PlayW
   const [gridCode, setGridCode] = useState(defaultGridCode);
   const [label, setLabel] = useState("");
   const [place, setPlace] = useState("");
-  const [list, setList] = useState<Tap[]>(taps);
-  const [loaded, setLoaded] = useState(false);
   const [lastAdded, setLastAdded] = useState<string | null>(null);
-
-  useEffect(() => {
-    setList(loadRepairList(taps));
-    setLoaded(true);
-  }, [taps]);
-
-  const changeList = (next: Tap[]) => {
-    setList(next);
-    if (loaded) saveRepairList(next);
-  };
+  const [addedKey, setAddedKey] = useState<string | null>(null);
+  const repair = useRepairList(taps, { resetOnLoad });
 
   // Which rate feeds the impact: the live detector when it has a verdict, else the typed rate.
   const typed = Number(manualRate.replace(",", "."));
@@ -57,6 +50,8 @@ export function PlayWorkbench({ residence, gridFactors, defaultGridCode }: PlayW
   const rate = liveRate ?? (typed > 0 ? typed : null);
   const rateSource = liveRate !== null ? "counted by ear" : typed > 0 ? "typed in" : null;
 
+  // DEMO step 3: the spoon measurement is the real path; with no spoon, mlPerDropFromSpoon
+  // falls back to the USGS 0.25 mL default.
   const mlPerDrop = mlPerDropFromSpoon(spoonMl, spoonDrops);
   const dT = Math.max(0, Number(deltaT) || 0);
   const impact =
@@ -65,8 +60,21 @@ export function PlayWorkbench({ residence, gridFactors, defaultGridCode }: PlayW
       : null;
   const count = stats?.count ?? 0;
 
+  // One measurement, one row: the same inputs and the same drop count give the same key,
+  // so a double click or a repeat press adds nothing (addTapOnce in lib/store.ts).
+  const measurementKey = [
+    label.trim(),
+    place.trim(),
+    rate === null ? "none" : (Math.round(rate * 10) / 10).toFixed(1),
+    mlPerDrop.toFixed(3),
+    heater,
+    heater === "none" ? 0 : dT,
+    stats?.count ?? "typed",
+  ].join("|");
+  const justAdded = addedKey === measurementKey;
+
   const add = () => {
-    if (rate === null || rate <= 0) return;
+    if (rate === null || rate <= 0 || justAdded) return;
     const id = `tap-${Date.now()}`;
     const entry: Tap = {
       id,
@@ -77,20 +85,23 @@ export function PlayWorkbench({ residence, gridFactors, defaultGridCode }: PlayW
       spoonMl,
       heater,
       deltaT: heater === "none" ? 0 : dT,
-      cv: stats?.cv ?? 0,
+      // Finite and non-negative, so storedTapSchema accepts the row after a reload.
+      cv: typeof stats?.cv === "number" && Number.isFinite(stats.cv) ? Math.max(0, stats.cv) : 0,
       status: "dripping",
       measuredAt: new Date().toISOString().slice(0, 10),
       measuredBy: "You",
     };
-    changeList([entry, ...list]);
-    setLastAdded(id);
-    setLabel("");
-    setPlace("");
+    const added = repair.add(entry, measurementKey);
+    // Mark the key either way: a refused add means this measurement is already listed.
+    setAddedKey(measurementKey);
+    if (added) setLastAdded(id);
   };
 
   return (
     <div className="space-y-8">
-      <DripListener onStats={setStats} />
+      <div id="listen" className="scroll-mt-24">
+        <DripListener onStats={setStats} />
+      </div>
 
       <Card>
         <CardHeader>
@@ -221,21 +232,29 @@ export function PlayWorkbench({ residence, gridFactors, defaultGridCode }: PlayW
               Where
               <Input className="mt-1" value={place} placeholder="Block C, floor 2" onChange={(e) => setPlace(e.target.value)} />
             </label>
-            <Button onClick={add} disabled={rate === null || rate <= 0}>
-              Add to repair list
+            <Button onClick={add} disabled={rate === null || rate <= 0 || addedKey === measurementKey}>
+              {justAdded ? "Added to the list" : "Add to repair list"}
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      <RepairList
-        list={list}
-        gridCode={gridCode}
-        onChange={changeList}
-        onReset={() => setList(resetRepairList(taps))}
-        residenceName={residence.residenceName}
-        highlightId={lastAdded}
-      />
+      {repair.status === "loading" ? (
+        <RouteSkeleton label="Loading your repair list." />
+      ) : (
+        <RepairList
+          list={repair.list}
+          gridCode={gridCode}
+          onChange={repair.setList}
+          onReset={() => {
+            repair.reset();
+            setAddedKey(null);
+            setLastAdded(null);
+          }}
+          residenceName={residence.residenceName}
+          highlightId={lastAdded}
+        />
+      )}
     </div>
   );
 }
