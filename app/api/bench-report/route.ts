@@ -35,6 +35,7 @@ export async function GET(req: Request) {
     report = { ...report, rows };
   }
 
-  const body = { ok: true as const, source, data: report };
+  // report.source, not the mode: after a seed fallback in lib/adapter.ts the rows are "fake".
+  const body = { ok: true as const, source: report.source, data: report };
   return NextResponse.json(body satisfies ApiResponse<BenchReport>, { status: 200 });
 }
