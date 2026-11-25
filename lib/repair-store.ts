@@ -1,40 +1,7 @@
 import { fmt, tapImpact } from "@/lib/impact";
 import type { Tap } from "@/lib/types";
 
-const KEY = "guttora.repair-list.v1";
-
-// Repair list persistence. Today it is the browser's localStorage, seeded with the
-// residence's taps (served by lib/adapter.ts) on first load.
-// TODO: swap localStorage for a shared store (for example a Supabase table keyed by
-// residence) so every resident of a block edits the same list.
-export function loadRepairList(seed: Tap[]): Tap[] {
-  if (typeof window === "undefined") return seed;
-  try {
-    const raw = window.localStorage.getItem(KEY);
-    if (!raw) return seed;
-    const parsed = JSON.parse(raw) as Tap[];
-    return Array.isArray(parsed) ? parsed : seed;
-  } catch {
-    return seed;
-  }
-}
-
-export function saveRepairList(list: Tap[]): void {
-  try {
-    window.localStorage.setItem(KEY, JSON.stringify(list));
-  } catch {
-    // Private mode or full storage: the list still works for this session.
-  }
-}
-
-export function resetRepairList(seed: Tap[]): Tap[] {
-  try {
-    window.localStorage.removeItem(KEY);
-  } catch {
-    // ignore
-  }
-  return seed;
-}
+// Ranking and ticket text for the repair list. Persistence lives in lib/store.ts.
 
 /** Open taps ranked by yearly water loss, worst first. */
 export function rankOpenTaps(list: Tap[], gridCode: string): Array<{ tap: Tap; litres: number; kwh: number; kgCo2e: number }> {

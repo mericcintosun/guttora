@@ -4,6 +4,9 @@
 
 import type { BenchClip, GridFactor, Tap } from "../types";
 
+/** Bump when the seed taps change, so lib/store.ts drops a stored list built on the old seed. */
+export const SEED_VERSION = 1;
+
 export const residenceName = "Ayazağa Student Residence";
 
 export const taps: Tap[] = [
