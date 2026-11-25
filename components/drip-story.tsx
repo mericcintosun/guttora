@@ -8,7 +8,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { EmptyState } from "@/components/route-states";
 import { cn } from "@/lib/utils";
 import type { Tap } from "@/lib/types";
 import { annualLitres, DEFAULT_ML_PER_DROP, fmt, tapImpact } from "@/lib/impact";
@@ -207,14 +207,15 @@ export function DripStory({ taps, residenceName, storyTapId }: DripStoryProps) {
 
   if (!story) {
     return (
-      <Card>
-        <CardContent className="space-y-3">
-          <p className="font-bold">No tap to follow yet. Measure one on the bench.</p>
+      <EmptyState
+        title="No tap to follow yet."
+        body={`The story follows one tap at ${residenceName}, and it is not on the list right now. Measure your own instead.`}
+        action={
           <Button asChild>
-            <Link href="/play">Open the bench</Link>
+            <Link href="/play">Count a tap on the bench</Link>
           </Button>
-        </CardContent>
-      </Card>
+        }
+      />
     );
   }
 

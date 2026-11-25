@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import { EmptyState } from "@/components/route-states";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -79,11 +81,15 @@ export function AccuracyBench({
 
   if (benchClips.length === 0) {
     return (
-      <Card>
-        <CardContent>
-          <p className="font-bold">No bench clips loaded.</p>
-        </CardContent>
-      </Card>
+      <EmptyState
+        title="No bench clips loaded."
+        body="The six synthetic clips did not arrive, so there is nothing to count here. The live counter on the bench still works."
+        action={
+          <Button asChild>
+            <Link href="/play">Open the bench</Link>
+          </Button>
+        }
+      />
     );
   }
 

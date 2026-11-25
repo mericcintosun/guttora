@@ -1,13 +1,5 @@
-import { Card, CardContent } from "@/components/ui/card";
+import { RouteSkeleton } from "@/components/route-states";
 
 export default function Loading() {
-  return (
-    <div className="mx-auto max-w-prose">
-      <Card>
-        <CardContent>
-          <p className="font-bold">Loading the method notes.</p>
-        </CardContent>
-      </Card>
-    </div>
-  );
+  return <RouteSkeleton label="Loading the method notes and the bench clips." className="mx-auto max-w-prose" />;
 }
